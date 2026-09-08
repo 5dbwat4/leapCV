@@ -1,0 +1,27 @@
+# 参考项目（仅本地）
+Resume-Matcher-main/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 后端数据与配置
+backend/data/
+backend/.env
+backend/uploads/
+
+# 前端
+node_modules/
+frontend/dist/
+*.local
+
+# 日志
+*.log
+
+# IDE / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
