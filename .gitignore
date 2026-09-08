@@ -25,3 +25,7 @@ frontend/dist/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# 本地 AI 会话文件与 LaTeX 编译产物
+.zcode/
+*.aux

@@ -1,0 +1,108 @@
+\documentclass[10.5pt,fontset=windows]{ctexart}
+\usepackage[a4paper,top=1.5cm,bottom=1.5cm,left=1.7cm,right=1.7cm]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\definecolor{maincolor}{RGB}{0,82,155}
+\definecolor{graytext}{RGB}{90,90,90}
+
+% 章节标题
+\newcommand{\rsection}[1]{%
+  \vspace{9pt}%
+  {\color{maincolor}\heiti\zihao{4}#1}\par
+  \vspace{1pt}{\color{maincolor}\rule{\textwidth}{1pt}}\par
+  \vspace{3pt}}
+
+% 条目标题行：{职位/项目}{右侧时间}
+\newcommand{\entryhead}[2]{%
+  {\heiti #1}\hfill{\color{graytext}\small #2}\par\vspace{1pt}}
+
+\newcommand{\subhead}[2]{%
+  {\heiti #1}\hfill{\color{graytext}\small #2}\par\vspace{1pt}}
+
+\setlist[itemize]{leftmargin=1.2em, itemsep=1pt, parsep=0pt, topsep=2pt, label={\small\textbullet}}
+
+\begin{document}
+
+% ==================== 头部 ====================
+\begin{center}
+  {\zihao{2}\heiti 张伟伦}\\[4pt]
+  {\zihao{-4}求职意向：高级 Python 后端开发工程师}\quad
+  {\color{graytext}\zihao{-4}|}\quad
+  {\zihao{-4}期望城市：深圳}\quad
+  {\color{graytext}\zihao{-4}|}\quad
+  {\zihao{-4}期望薪资：30--40K}
+\end{center}
+\vspace{2pt}
+\begin{center}
+  \zihao{-4}男\quad 1997 年 5 月\quad 本科\quad 5 年经验\quad
+  电话：138-0013-8000\quad 邮箱：zhangweilun.dev@163.com
+\end{center}
+
+% ==================== 专业技能 ====================
+\rsection{专业技能}
+\begin{itemize}
+  \item \textbf{语言与框架}：熟练使用 Python，掌握 FastAPI、Django/DRF、Flask 等主流 Web 框架，理解 asyncio 异步编程与常见设计模式。
+  \item \textbf{数据库}：熟悉 MySQL 索引优化、慢查询治理与分库分表方案；熟练使用 Redis，掌握缓存穿透/击穿/雪崩的应对策略。
+  \item \textbf{中间件}：熟悉 Kafka、RabbitMQ 消息队列，使用过 Elasticsearch 日志检索方案。
+  \item \textbf{基础设施}：熟练使用 Docker，掌握 Kubernetes 部署与 HPA 弹性伸缩，熟悉 GitLab CI 持续集成、Prometheus + Grafana 监控体系。
+  \item \textbf{架构能力}：熟悉高并发场景下的幂等设计、分布式事务、限流熔断与服务拆分实践。
+\end{itemize}
+
+% ==================== 工作经历 ====================
+\rsection{工作经历}
+
+\entryhead{深圳市云启科技有限公司\quad ——\quad Python 后端开发工程师}{2022.07 -- 至今}
+\begin{itemize}
+  \item 主导支付网关服务重构，将单体应用拆分为 4 个微服务，接口平均响应时间从 480ms 降至 120ms，服务可用性从 99.5\% 提升至 99.99\%。
+  \item 设计基于 Kafka 的订单异步化与削峰方案，订单峰值处理能力从 2,000 TPS 提升至 12,000 TPS，系统稳定性得到显署提升。
+  \item 帮忙搭建了基于 Prometheus + Grafana 的业务监控大盘，核心接口异常告警响应时间缩短至 5 分钟以内。
+  \item 推动团队落地 Code Review 制度与单元测试规范，核心模块测试覆盖率从 32\% 提升至 75\%。
+\end{itemize}
+
+\entryhead{武汉星河信息技术有限公司\quad ——\quad 后端开发工程师}{2019.07 -- 2022.06}
+\begin{itemize}
+  \item 负责电商订单系统中购物车、下单、履约等核心模块的开发与迭代，支撑日均订单量 30 万单、大促期间峰值 8,000 单/分钟的业务场景。
+  \item 负责会员积分体系的日常迭代与维护。
+  \item 使用 Redis 重构热点商品缓存链路，缓存命中率达到 98\%，高峰期数据库负载下降约 60\%。
+\end{itemize}
+
+% ==================== 项目经历 ====================
+\rsection{项目经历}
+
+\entryhead{聚合支付网关平台（技术负责人，4 人团队）}{2023.03 -- 2024.01}
+\begin{itemize}
+  \item \textbf{项目背景}：公司多条业务线各自对接支付渠道，重复建设、对账困难，需要统一的聚合支付网关。
+  \item \textbf{方案与实现}：基于 FastAPI + MySQL + Kafka 设计渠道适配层，统一对接微信、支付宝、银联等 12 家支付渠道；通过状态机管理支付单生命周期，结合唯一键 + 事务消息保证幂等；设计 T+1 自动对账与差错处理流程。
+  \item \textbf{项目成果}：平台上线后承载日均 300 万笔交易、日交易流水峰值 8,000 万元；上线以来资损率为 0，新渠道接入周期从 3 周缩短至 5 天。
+\end{itemize}
+
+\entryhead{电商大促弹性扩容方案（核心开发）}{2022.10 -- 2022.11}
+\begin{itemize}
+  \item \textbf{项目背景}：双十一大促流量为日常 8--10 倍，固定容量部署成本高且存在过载风险。
+  \item \textbf{方案与实现}：基于 Kubernetes HPA 配合自定义 QPS 指标实现无状态服务自动扩缩容，前置 Kafka 削峰填谷，下游按消费能力匀速处理；制定降级预案，大促期间关闭非核心功能。
+  \item \textbf{项目成果}：大促期间零故障、零资损，服务器成本较固定扩容方案节约 40\%。
+\end{itemize}
+
+% ==================== 教育背景 ====================
+\rsection{教育背景}
+\subhead{华中科技大学\quad ——\quad 计算机科学与技术\quad 本科}{2015.09 -- 2019.06}
+\begin{itemize}
+  \item 主修课程：数据结构、操作系统、计算机网络、数据库系统原理、分布式系统。
+  \item 获校级二等奖学金两次，参与 ACM 校队集训。
+\end{itemize}
+
+% ==================== 证书与其他 ====================
+\rsection{证书与其他}
+\begin{itemize}
+  \item 大学英语六级（CET-6），可阅读英文技术文档。
+  \item 软考中级——软件设计师。
+  \item 技术博客：持续输出后端架构与性能优化相关文章，累计 60 余篇。
+\end{itemize}
+
+% ==================== 自我评价 ====================
+\rsection{自我评价}
+工作认真负责，吃苦耐劳，具有较强的团队协作精神和沟通能力；学习能力 强，对新技术有浓厚兴趣，能承受较大的工作压力，适应快节奏的工作环境。
+
+\end{document}
