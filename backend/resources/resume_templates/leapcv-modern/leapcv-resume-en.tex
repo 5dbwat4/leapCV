@@ -1,0 +1,112 @@
+%==============================================================================
+% LeapCV Custom Resume Template (English)
+% Aligned with the structure of LeapCV AI output:
+%   Objective -> Education -> Experience -> Projects -> Skills -> Summary
+%
+% Compile: pdflatex leapcv-resume-en.tex  (or latexmk -pdf)
+% Usage:
+%   1. Replace [bracketed] placeholders with your real information;
+%   2. Write bullet points with the STAR method and quantify results;
+%   3. Blocks marked with %<<< can be duplicated to add more entries.
+%==============================================================================
+\documentclass[10.5pt]{article}
+
+\usepackage[a4paper, top=1.6cm, bottom=1.6cm, left=1.7cm, right=1.7cm]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{fontawesome5}
+\usepackage{tabularx}
+
+\definecolor{primary}{HTML}{4F46E5}   % LeapCV primary (indigo)
+\definecolor{darktext}{HTML}{1F2937}
+\definecolor{graytext}{HTML}{6B7280}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\raggedbottom
+\raggedright
+\color{darktext}
+
+%---------- Section style ----------
+\titleformat{\section}
+  {\large\bfseries\color{primary}}
+  {}{0em}{}
+  [{\color{primary}\titlerule[0.8pt]}\vspace{-2pt}]
+\titlespacing{\section}{0pt}{10pt}{6pt}
+
+%---------- Custom commands ----------
+% Entry: {Organization}{City}{Role / Degree}{Period}
+\newcommand{\entry}[4]{%
+  \begin{tabularx}{\textwidth}{@{}X r@{}}
+    \textbf{#1} \; {\small\color{graytext}#3} & {\small\color{graytext}#4} \\
+    {\small\color{graytext}#2} & \\
+  \end{tabularx}\vspace{-6pt}}
+
+% Project: {Name}{Stack / Role}{Period}
+\newcommand{\project}[3]{%
+  \begin{tabularx}{\textwidth}{@{}X r@{}}
+    \textbf{#1} \; {\small\color{graytext}#2} & {\small\color{graytext}#3} \\
+  \end{tabularx}\vspace{-6pt}}
+
+\setlist[itemize]{leftmargin=1.2em, itemsep=1pt, parsep=0pt, topsep=2pt, label={\color{primary}\small\textbullet}}
+
+\begin{document}
+
+%========== Header ==========
+\begin{center}
+  {\LARGE\bfseries [Your Name]}\quad {\small\color{graytext}Objective: [Target Position]}\\[4pt]
+  {\small
+    {\color{primary}\faPhone*} [+1 123-456-7890] \;\;
+    {\color{primary}\faEnvelope} [your.email@example.com] \;\;
+    {\color{primary}\faMapMarker*} [City] \;\;
+    {\color{primary}\faGithub} [github.com/yourname]}
+\end{center}
+\vspace{-4pt}
+
+%========== Education ==========
+\section{\faGraduationCap\ Education}
+\entry{[Example University]}{[City, Country]}{[B.S. in Computer Science]}{[2020.09 - 2024.06]}
+\begin{itemize}
+  \item [GPA 3.8/4.0 (Top 5\%); Coursework: Data Structures, Operating Systems, Computer Networks]
+  \item [Honors: National Scholarship, Outstanding Graduate — remove if not applicable]
+\end{itemize}
+
+%========== Experience ==========
+\section{\faBriefcase\ Experience}
+\entry{[Example Technology Company]}{[City]}{[Software Engineer]}{[2024.07 - Present]}
+\begin{itemize}
+  \item Led the re-architecture of the order service, splitting monolithic APIs into 3 domain services and reducing average response time from 480ms to 120ms
+  \item Designed and shipped a multi-tier caching solution, achieving a 92\% hit rate on hot data and cutting peak database load by 65\%
+  \item Drove a slow-query remediation program, optimizing 30+ core SQL statements and reducing P95 latency by 75\%
+\end{itemize}
+
+%<<< Duplicate this block to add more entries
+% \entry{[Company]}{[City]}{[Role]}{[Period]}
+% \begin{itemize}
+%   \item [Action verb + what you did + quantified result]
+% \end{itemize}
+
+%========== Projects ==========
+\section{\faCubes\ Projects}
+\project{[E-commerce Middle Platform]}{[Python / FastAPI / MySQL / Redis]}{[2024.03 - 2024.10]}
+\begin{itemize}
+  \item Background: [one sentence on the business problem and scale, e.g., supporting 500K daily orders]
+  \item Key work: [architecture design / core modules / technical challenges, 1-2 bullets]
+  \item Outcome: [quantified results, e.g., X\% performance gain, awards, users served]
+\end{itemize}
+
+%========== Skills ==========
+\section{\faCogs\ Skills}
+\begin{itemize}
+  \item \textbf{Languages}: [Python (3 years of backend experience); familiar with Go, SQL]
+  \item \textbf{Frameworks \& Middleware}: [FastAPI / MySQL index tuning / Redis caching design]
+  \item \textbf{Engineering}: [Docker deployment, Git collaboration, CI/CD pipelines]
+\end{itemize}
+
+%========== Summary ==========
+\section{\faUser\ Summary}
+[2-3 sentences summarizing your differentiating strengths: domain focus + verifiable evidence. Avoid empty adjectives. Example: Backend engineer focused on e-commerce, with end-to-end experience from domain modeling to performance tuning; published 20+ technical blog posts.]
+
+\end{document}

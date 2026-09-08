@@ -1,0 +1,205 @@
+%-------------------------
+% Resume in LaTeX (Jake's Resume style)
+% Original author : Jake Gutierrez (https://github.com/jakegut/resume)
+% Based off of    : https://github.com/sb2nov/resume
+% License         : MIT
+% Sanitized       : personal information replaced with placeholders
+%                   for use as a generic template in LeapCV (简跃).
+% Compile         : pdflatex resume.tex  (或 latexmk -pdf resume.tex)
+%-------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\input{glyphtounicode}
+
+
+%----------FONT OPTIONS----------
+% sans-serif
+% \usepackage[sfdefault]{FiraSans}
+% \usepackage[sfdefault]{roboto}
+% \usepackage[sfdefault]{noto-sans}
+% \usepackage[default]{sourcesanspro}
+
+% serif
+% \usepackage{CormorantGaramond}
+% \usepackage{charter}
+
+
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.0in}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+% Ensure that generate pdf is machine readable/ATS parsable
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubSubheading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+%----------HEADING----------
+\begin{center}
+    \textbf{\Huge \scshape Your Name} \\ \vspace{1pt}
+    \small +1-123-456-7890 $|$ \href{mailto:your.email@example.com}{\underline{your.email@example.com}} $|$
+    \href{https://linkedin.com/in/...}{\underline{linkedin.com/in/yourname}} $|$
+    \href{https://github.com/...}{\underline{github.com/yourname}}
+\end{center}
+
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Example University}{City, State}
+      {Bachelor of Science in Computer Science}{Aug. 2018 -- May 2022}
+    \resumeSubheading
+      {Example Community College}{City, State}
+      {Associate's in Liberal Arts}{Aug. 2014 -- May 2018}
+  \resumeSubHeadingListEnd
+
+
+%-----------EXPERIENCE-----------
+\section{Experience}
+  \resumeSubHeadingListStart
+
+    \resumeSubheading
+      {Software Engineer Intern}{June 2023 -- Present}
+      {Example Technology Company}{City, State}
+      \resumeItemListStart
+        \resumeItem{Developed a REST API using FastAPI and PostgreSQL to store data from learning management systems}
+        \resumeItem{Developed a full-stack web application using Flask, React, PostgreSQL and Docker to analyze usage data}
+        \resumeItem{Explored ways to visualize team collaboration metrics in a dashboard setting}
+      \resumeItemListEnd
+
+    \resumeSubheading
+      {Information Technology Support Specialist}{Sep. 2021 -- Present}
+      {Example University}{City, State}
+      \resumeItemListStart
+        \resumeItem{Communicate with managers to set up campus computers used on campus}
+        \resumeItem{Assess and troubleshoot computer problems brought by students, faculty and staff}
+        \resumeItem{Maintain upkeep of computers, classroom equipment, and 200 printers across campus}
+    \resumeItemListEnd
+
+    \resumeSubheading
+      {Undergraduate Research Assistant}{May 2022 -- July 2022}
+      {Example University Research Lab}{City, State}
+      \resumeItemListStart
+        \resumeItem{Explored methods to generate procedural content using machine learning techniques}
+        \resumeItem{Developed a prototype application in Java to evaluate the generated results}
+        \resumeItem{Contributed 50K+ lines of code to an established codebase via Git}
+        \resumeItem{Conducted a human subject study to compare alternative generation techniques}
+        \resumeItem{Wrote an 8-page paper and gave multiple presentations on-campus}
+      \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+
+
+%-----------PROJECTS-----------
+\section{Projects}
+    \resumeSubHeadingListStart
+      \resumeProjectHeading
+          {\textbf{Project Alpha} $|$ \emph{Python, Flask, React, PostgreSQL, Docker}}{June 2023 -- Present}
+          \resumeItemListStart
+            \resumeItem{Developed a full-stack web application with Flask serving a REST API and React as the frontend}
+            \resumeItem{Implemented OAuth authentication to integrate data from third-party platforms}
+            \resumeItem{Visualized platform data to surface actionable collaboration insights}
+            \resumeItem{Used Celery and Redis for asynchronous task processing}
+          \resumeItemListEnd
+      \resumeProjectHeading
+          {\textbf{Project Beta} $|$ \emph{Java, Maven, CI/CD, Git}}{May 2021 -- May 2023}
+          \resumeItemListStart
+            \resumeItem{Developed a plugin extending an existing platform with new gameplay features}
+            \resumeItem{Published the plugin gaining 2K+ downloads and an average 4.5/5-star review}
+            \resumeItem{Implemented continuous delivery to build and publish automatically upon a new release}
+            \resumeItem{Collaborated with platform administrators to suggest features and gather feedback}
+          \resumeItemListEnd
+    \resumeSubHeadingListEnd
+
+
+
+%
+%-----------PROGRAMMING SKILLS-----------
+\section{Technical Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+     \textbf{Languages}{: Java, Python, C/C++, SQL (Postgres), JavaScript, HTML/CSS} \\
+     \textbf{Frameworks}{: React, Node.js, Flask, FastAPI, Material-UI} \\
+     \textbf{Developer Tools}{: Git, Docker, CI/CD, VS Code, IntelliJ} \\
+     \textbf{Libraries}{: pandas, NumPy, Matplotlib}
+    }}
+ \end{itemize}
+
+
+%-------------------------------------------
+\end{document}

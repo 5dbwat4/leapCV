@@ -1,0 +1,85 @@
+% !TEX TS-program = xelatex
+% !TEX encoding = UTF-8 Unicode
+% !Mode:: "TeX:UTF-8"
+% Original author : hijiangtao (https://github.com/hijiangtao/resume)
+% License         : MIT
+% Sanitized       : personal information replaced with placeholders
+%                   for use as a generic template in LeapCV (简跃).
+% Compile         : xelatex resume-zh_CN.tex（依赖同目录 fonts/ 与 .sty 文件）
+
+\documentclass{resume}
+\usepackage{zh_CN-Adobefonts_external} % Simplified Chinese Support using external fonts (./fonts/zh_CN-Adobe/)
+%\usepackage{zh_CN-Adobefonts_internal} % Simplified Chinese Support using system fonts
+\usepackage{linespacing_fix} % disable extra space before next section
+\usepackage{cite}
+
+\begin{document}
+\pagenumbering{gobble} % suppress displaying page number
+
+\name{姓名}
+
+% {mobilephone}{E-mail}{求职意向}{主页/GitHub}
+% be careful of _ in email address
+\contactInfo{(+86) 123-4567-8901}{your.email@example.com}{求职意向，如：Web前端研发工程师}{GitHub @yourname}
+% {E-mail}{mobilephone}
+% keep the last empty braces!
+%\contactInfo{your.email@example.com}{(+86) 123-4567-8901}{}
+
+\section{个人总结}
+（可选）用 2-3 句话概括核心竞争力、专业方向与职业亮点：突出与目标岗位最匹配的技术栈、项目经验与成果，避免空泛的形容词堆砌。
+
+\section{教育背景}
+\datedsubsection{\textbf{示例大学},计算机科学与技术,\textit{工学学士}}{2016.9 - 2020.6}
+\ \textbf{排名 5/120（前 5\%）},国家奖学金(1 次),校级奖学金(3 次),优秀毕业生
+\datedsubsection{\textbf{示例第二大学},软件工程,\textit{在读硕士研究生}}{2020.9 - 2023.6}
+\ \textbf{研究方向}: 分布式系统与数据可视化
+
+\section{技术能力}
+\begin{itemize}[parsep=0.2ex]
+  \item \textbf{编程语言}: 按熟练程度列出，如 Python / JavaScript / Go / SQL / Shell
+  \item \textbf{操作系统、数据库与工程工具}: Linux / macOS / MySQL / Redis / Git / Docker
+  \item \textbf{框架与关键技术}: 按岗位关键词对齐，如 React / Vue.js / FastAPI / Kubernetes
+\end{itemize}
+
+\section{实习/工作经历}
+\datedsubsection{\textbf{示例科技有限公司},后端开发工程师}{2022.7 - 至今}
+\begin{itemize}
+  \item 主导 XX 服务的设计与研发，接口平均响应时间从 XXXms 降至 XXms
+  \item 推动 XX 专项治理，覆盖 N 个核心模块，故障率下降 XX\%
+  \item 设计并落地 XX 中间件选型方案，支撑日均 XX 万请求
+\end{itemize}
+
+\datedsubsection{\textbf{示例互联网公司},数据开发实习生}{2021.6 - 2021.9}
+\begin{itemize}
+  \item 参与数据仓库建设，完成 X 张核心表的建模与 ETL 任务开发
+  \item 开发可视化报表平台，服务 X 个业务团队的日常数据需求
+\end{itemize}
+
+\section{项目经历}
+\datedsubsection{\textbf{示例项目：XX 系统}}{2021.3 - 2021.6}
+\role{个人项目 / 课程设计}{技术栈: Python, FastAPI, MySQL}
+\begin{itemize}
+  \item 项目背景一句话：解决什么问题、面向什么场景
+  \item 核心工作：架构设计、关键模块实现、难点突破
+  \item 项目成果：量化指标，如性能提升、用户规模、获奖情况
+\end{itemize}
+
+\section{竞赛获奖/项目作品}
+\begin{itemize}[parsep=0.2ex]
+  \item XX 竞赛\textbf{全国一等奖}，2020 年 8 月
+  \item XX 奖学金，2019 年 12 月
+  \item 个人主页/博客：\textit{https://your.homepage.example/}
+\end{itemize}
+
+\section{社区参与/其他}
+\begin{itemize}[parsep=0.2ex]
+  \item 乐于参与开源社区讨论，贡献过 XX 项目的文档与 Issue 反馈
+  \item 担任 XX 课程助教 / XX 社团负责人（时间段）
+  \item 志愿者经历：XX 活动（时间段）
+\end{itemize}
+
+%% Reference
+%\newpage
+%\bibliographystyle{IEEETran}
+%\bibliography{mycite}
+\end{document}

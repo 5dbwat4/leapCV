@@ -1,0 +1,112 @@
+%==============================================================================
+% 简跃 LeapCV 定制简历模板（中文版）
+% 与简跃 AI 分析输出的简历结构对齐：求职意向 → 教育 → 工作 → 项目 → 技能 → 自我评价
+%
+% 编译方式：xelatex leapcv-resume-zh.tex（需支持中文的 XeLaTeX 环境）
+% 使用说明：
+%   1. 所有【方括号】内容为占位符，替换为你的真实信息；
+%   2. 经历描述建议遵循 STAR 法则（背景-任务-行动-结果）并优先量化成果；
+%   3. %<<< 的注释块为可增删的板块模板，按需复制。
+%==============================================================================
+\documentclass[10.5pt]{article}
+
+\usepackage[a4paper, top=1.6cm, bottom=1.6cm, left=1.7cm, right=1.7cm]{geometry}
+\usepackage[UTF8, fontset=windows]{ctex} % Windows 字体集；macOS/Linux 改 fontset=fandol 等
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{fontawesome5}
+\usepackage{tabularx}
+
+\definecolor{primary}{HTML}{4F46E5}   % 简跃主色（靛蓝）
+\definecolor{darktext}{HTML}{1F2937}
+\definecolor{graytext}{HTML}{6B7280}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\raggedbottom
+\raggedright
+\color{darktext}
+
+%---------- 标题样式 ----------
+\titleformat{\section}
+  {\large\bfseries\color{primary}}
+  {}{0em}{}
+  [{\color{primary}\titlerule[0.8pt]}\vspace{-2pt}]
+\titlespacing{\section}{0pt}{10pt}{6pt}
+
+%---------- 自定义命令 ----------
+% 经历条目：{机构/公司}{城市}{职位/学位}{时间段}
+\newcommand{\entry}[4]{%
+  \begin{tabularx}{\textwidth}{@{}X r@{}}
+    \textbf{#1} \; {\small\color{graytext}#3} & {\small\color{graytext}#4} \\
+    {\small\color{graytext}#2} & \\
+  \end{tabularx}\vspace{-6pt}}
+
+% 项目条目：{项目名}{技术栈/角色}{时间段}
+\newcommand{\project}[3]{%
+  \begin{tabularx}{\textwidth}{@{}X r@{}}
+    \textbf{#1} \; {\small\color{graytext}#2} & {\small\color{graytext}#3} \\
+  \end{tabularx}\vspace{-6pt}}
+
+\setlist[itemize]{leftmargin=1.2em, itemsep=1pt, parsep=0pt, topsep=2pt, label={\color{primary}\small\textbullet}}
+
+\begin{document}
+
+%========== 页眉 ==========
+\begin{center}
+  {\LARGE\bfseries 【姓名】}\quad {\small\color{graytext}求职意向：【目标岗位名称】}\\[4pt]
+  {\small
+    {\color{primary}\faPhone*} 【+86 138-0000-0000】 \;\;
+    {\color{primary}\faEnvelope} 【your.email@example.com】 \;\;
+    {\color{primary}\faMapMarker*} 【期望城市】 \;\;
+    {\color{primary}\faGithub} 【github.com/yourname】}
+\end{center}
+\vspace{-4pt}
+
+%========== 教育经历 ==========
+\section{\faGraduationCap\ 教育经历}
+\entry{【示例大学】}{【城市】}{【计算机科学与技术 · 本科】}{【2020.09 - 2024.06】}
+\begin{itemize}
+  \item 【GPA 3.8/4.0（专业前 5\%）；核心课程：数据结构、操作系统、计算机网络】
+  \item 【荣誉奖项：国家奖学金、优秀毕业生等，无则删除本行】
+\end{itemize}
+
+%========== 工作经历 ==========
+\section{\faBriefcase\ 工作经历}
+\entry{【示例科技有限公司】}{【城市】}{【后端开发工程师】}{【2024.07 - 至今】}
+\begin{itemize}
+  \item 主导【订单服务】重构，将单体接口拆分为 3 个领域服务，接口平均响应时间从 480ms 降至 120ms
+  \item 设计并落地多级缓存方案，热点数据命中率 92\%，数据库峰值负载下降 65\%
+  \item 推动慢查询治理专项，优化 30+ 条核心 SQL，核心接口 P95 耗时下降 75\%
+\end{itemize}
+
+%<<< 复制本块以添加更多工作经历
+% \entry{【公司名称】}{【城市】}{【职位】}{【时间段】}
+% \begin{itemize}
+%   \item 【动词开头 + 做了什么 + 量化结果】
+% \end{itemize}
+
+%========== 项目经历 ==========
+\section{\faCubes\ 项目经历}
+\project{【电商中台系统】}{【技术栈：Python / FastAPI / MySQL / Redis】}{【2024.03 - 2024.10】}
+\begin{itemize}
+  \item 项目背景：【一句话说明项目解决的业务问题与规模，如支撑日均 50 万单】
+  \item 核心工作：【架构设计 / 关键模块实现 / 难点突破，1-2 条】
+  \item 项目成果：【量化成果，如性能提升 X\%、获 XX 奖项、服务 XX 用户】
+\end{itemize}
+
+%========== 专业技能 ==========
+\section{\faCogs\ 专业技能}
+\begin{itemize}
+  \item \textbf{编程语言}：【熟练使用 Python，3 年后端开发经验；熟悉 Go / SQL】
+  \item \textbf{框架与中间件}：【熟悉 FastAPI / MySQL 索引优化 / Redis 缓存设计】
+  \item \textbf{工程与协作}：【熟悉 Docker 容器化部署、Git 协作与 CI/CD 流程】
+\end{itemize}
+
+%========== 自我评价 ==========
+\section{\faUser\ 自我评价}
+【用 2-3 句话总结差异化优势：领域定位 + 可验证的事实证据，避免空泛形容词。示例：聚焦电商后端领域，具备从业务建模到性能调优的完整闭环经验；持续输出技术博客 20+ 篇。】
+
+\end{document}

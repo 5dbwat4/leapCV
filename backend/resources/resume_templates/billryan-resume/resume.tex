@@ -1,0 +1,87 @@
+% !TEX program = xelatex
+% Original author : Bin Yuan (https://github.com/billryan/resume)
+% License         : MIT
+% Sanitized       : personal information replaced with placeholders
+%                   for use as a generic template in LeapCV (简跃).
+% Compile         : xelatex resume.tex（中文需取消下方 zh_CN-Adobefonts 注释）
+
+\documentclass{resume}
+% 中文支持：取消下行注释以启用（使用 ./fonts/zh_CN-Adobe/ 下的外部字体）
+% \usepackage{zh_CN-Adobefonts_external}
+% 使用系统字体时改用：
+% \usepackage{zh_CN-Adobefonts_internal}
+
+\begin{document}
+\pagenumbering{gobble} % suppress displaying page number
+
+\name{Your Name}
+
+\basicInfo{
+  \email{your.email@example.com} \textperiodcentered\
+  \phone{(+86) 123-4567-8901} \textperiodcentered\
+  \linkedin[yourname]{https://www.linkedin.com/in/yourname}}
+
+\section{\faGraduationCap\ Education}
+\datedsubsection{\textbf{Example University}, City, Country}{2018 -- Present}
+\textit{Master student} in Computer Science (CS), expected March 2021
+\datedsubsection{\textbf{Example Institute of Technology}, City, Country}{2014 -- 2018}
+\textit{B.S.} in Electronics Engineering (EE)
+
+\section{\faUsers\ Experience}
+\datedsubsection{\textbf{Example Technology Company}}{2020 -- Present}
+\role{Software Engineer}{Team: Backend Platform}
+Brief introduction: Responsible for xxx.
+\begin{itemize}
+  \item Implemented xxx feature
+  \item Optimized xxx 5\%
+  \item xxx
+\end{itemize}
+
+\datedsubsection{\textbf{Example Internet Company}}{2019 -- 2020}
+\role{Software Engineer Intern}{Manager: xxx}
+Brief introduction: xxx.
+\begin{itemize}
+  \item Implemented xxx feature
+  \item Optimized xxx 5\%
+  \item xxx
+\end{itemize}
+
+\datedsubsection{\textbf{xxx Projects}}{Jan. 2020 -- Present}
+\role{Python, Django, Linux}{Individual Projects, collaborated with xxx}
+Brief introduction: xxx
+\begin{itemize}
+  \item Implemented xxx feature
+  \item Optimized xxx 5\%
+  \item xxx
+\end{itemize}
+
+% Reference Test
+%\datedsubsection{\textbf{Paper Title\cite{zaharia2012resilient}}}{May. 2020}
+%An xxx optimized for xxx\cite{verma2015large}
+%\begin{itemize}
+%  \item main contribution
+%\end{itemize}
+
+\section{\faCogs\ Skills}
+\begin{itemize}[parsep=0.5ex]
+  \item Programming Languages: Python == C++ > Java > Go
+  \item Platform: Linux, macOS
+  \item Development: Web, Backend, xxx
+\end{itemize}
+
+\section{\faHeartO\ Honors and Awards}
+\datedline{\textit{\nth{1} Prize}, Award on xxx }{Jun. 2020}
+\datedline{Other awards}{2021}
+
+\section{\faInfo\ Miscellaneous}
+\begin{itemize}[parsep=0.5ex]
+  \item Blog: https://your.blog.example
+  \item GitHub: https://github.com/yourname
+  \item Languages: English - Fluent, Mandarin - Native speaker
+\end{itemize}
+
+%% Reference
+%\newpage
+%\bibliographystyle{IEEETran}
+%\bibliography{mycite}
+\end{document}
