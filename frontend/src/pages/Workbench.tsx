@@ -1,19 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
-  ClipboardPaste,
+  BadgeCheck,
+  FileText,
   FileUp,
+  FolderOpen,
   Loader2,
   PlayCircle,
-  Trash2,
+  Search,
   Upload,
   X,
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { createResumeText, fetchResumeThumb, streamOptimize, uploadResume } from "@/api"
+import { fetchResumeThumb, fetchResumes, streamOptimize, uploadResume } from "@/api"
 import { apiErrorMessage } from "@/api/client"
 import type { ProgressEvent, ResumeOut } from "@/api/types"
+import { Badge } from "@/components/ui/badge"
 import StageProgress, { STAGES, type StageStatus } from "@/components/StageProgress"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,7 +34,6 @@ export default function WorkbenchPage() {
 
   // 简历输入
   const [resume, setResume] = useState<ResumeOut | null>(null)
-  const [resumeText, setResumeText] = useState("")
   const [dragOver, setDragOver] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [thumbUrl, setThumbUrl] = useState<string | null>(null)
@@ -70,6 +72,30 @@ export default function WorkbenchPage() {
   const [lastEvent, setLastEvent] = useState<ProgressEvent | null>(null)
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
 
+  // 「从已有简历中选择」
+  const [savedResumes, setSavedResumes] = useState<ResumeOut[]>([])
+  const [savedLoading, setSavedLoading] = useState(false)
+  const [savedSearch, setSavedSearch] = useState("")
+  const savedFiltered = savedResumes.filter((r) =>
+    r.filename.toLowerCase().includes(savedSearch.trim().toLowerCase()),
+  )
+
+  const loadSavedResumes = async () => {
+    setSavedLoading(true)
+    try {
+      setSavedResumes(await fetchResumes())
+    } catch {
+      /* 加载失败时列表留空，不影响其他 tab */
+    } finally {
+      setSavedLoading(false)
+    }
+  }
+
+  const selectSaved = (r: ResumeOut) => {
+    setResume(r)
+    toast.success(`已选择简历：${r.filename}`)
+  }
+
   const handleFile = useCallback(
     async (file: File) => {
       const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase()
@@ -85,10 +111,9 @@ export default function WorkbenchPage() {
       try {
         const saved = await uploadResume(file)
         setResume(saved)
-        setResumeText(saved.raw_text)
-        toast.success(`简历解析成功：${file.name}`)
+        toast.success(`识别完成：${file.name}`)
       } catch (err) {
-        toast.error(apiErrorMessage(err, "简历解析失败"))
+        toast.error(apiErrorMessage(err, "简历识别失败"))
       } finally {
         setUploading(false)
       }
@@ -105,14 +130,12 @@ export default function WorkbenchPage() {
 
   const clearResume = () => {
     setResume(null)
-    setResumeText("")
   }
 
   const startAnalyze = async () => {
     if (analyzing) return
-    const text = resumeText.trim()
-    if (text.length < 50) {
-      toast.error("简历内容太短（至少 50 字），请上传文件或粘贴完整简历")
+    if (!resume) {
+      toast.error("请先上传简历或从已有简历中选择一份")
       return
     }
     if (jdText.trim().length < 30) {
@@ -126,13 +149,7 @@ export default function WorkbenchPage() {
     setLastEvent(null)
 
     try {
-      // 有解析记录且内容未编辑 → 直接复用；否则先保存当前文本
-      let resumeId = resume && resume.raw_text === resumeText ? resume.id : null
-      if (!resumeId) {
-        const saved = await createResumeText(resumeText, resume?.filename)
-        setResume(saved)
-        resumeId = saved.id
-      }
+      const resumeId = resume.id
 
       const controller = new AbortController()
       abortRef.current = controller
@@ -214,108 +231,147 @@ export default function WorkbenchPage() {
                 <FileUp className="size-4 text-primary" />
                 我的简历
               </CardTitle>
-              <CardDescription>支持 PDF / Word / TXT，或直接粘贴文本（可编辑）</CardDescription>
+              <CardDescription>支持 PDF / Word / TXT，AI 直接识别文件内容</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="upload">
+              <Tabs defaultValue="upload" onValueChange={(v) => v === "saved" && void loadSavedResumes()}>
                 <TabsList className="mb-3 w-full">
                   <TabsTrigger value="upload" className="flex-1 gap-1.5">
                     <Upload className="size-3.5" />
                     上传文件
                   </TabsTrigger>
-                  <TabsTrigger value="paste" className="flex-1 gap-1.5">
-                    <ClipboardPaste className="size-3.5" />
-                    粘贴文本
+                  <TabsTrigger value="saved" className="flex-1 gap-1.5">
+                    <FolderOpen className="size-3.5" />
+                    从已有简历中选择
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="upload">
-                  {resume && resume.filename !== "粘贴的简历" ? (
-                    <div className="mb-3 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm">
-                      {thumbUrl ? (
-                        <img
-                          src={thumbUrl}
-                          alt="简历首页缩略图"
-                          className="h-14 w-10 shrink-0 rounded border border-border object-cover"
-                        />
-                      ) : (
-                        <FileUp className="size-4 shrink-0 text-primary" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium">{resume.filename}</p>
-                        <p className="text-xs text-muted-foreground">
-                          已解析 {resumeText.length} 字
-                          {resume.file_size != null && ` · ${(resume.file_size / 1024).toFixed(0)} KB`}
-                        </p>
-                      </div>
-                      <Button variant="ghost" size="icon" className="size-7" onClick={clearResume}>
-                        <X className="size-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div
-                      className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
-                        dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-muted/50"
-                      }`}
-                      onClick={() => fileInputRef.current?.click()}
-                      onDragOver={(e) => {
-                        e.preventDefault()
-                        setDragOver(true)
+                  <div
+                    className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
+                      dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-muted/50"
+                    }`}
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      setDragOver(true)
+                    }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={onDrop}
+                  >
+                    {uploading ? (
+                      <Loader2 className="size-8 animate-spin text-primary" />
+                    ) : (
+                      <Upload className="size-8 text-muted-foreground" />
+                    )}
+                    <p className="text-sm font-medium">
+                      {uploading ? "正在识别文件内容…" : "点击选择文件或拖拽到此处"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">PDF / DOCX / TXT / MD，不超过 10MB</p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.docx,.txt,.md"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) void handleFile(file)
+                        e.target.value = ""
                       }}
-                      onDragLeave={() => setDragOver(false)}
-                      onDrop={onDrop}
-                    >
-                      {uploading ? (
-                        <Loader2 className="size-8 animate-spin text-primary" />
-                      ) : (
-                        <Upload className="size-8 text-muted-foreground" />
-                      )}
-                      <p className="text-sm font-medium">
-                        {uploading ? "正在解析简历…" : "点击选择文件或拖拽到此处"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">PDF / DOCX / TXT / MD，不超过 10MB</p>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".pdf,.docx,.txt,.md"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) void handleFile(file)
-                          e.target.value = ""
-                        }}
-                      />
-                    </div>
-                  )}
+                    />
+                  </div>
                 </TabsContent>
 
-                <TabsContent value="paste">
-                  {!resume && (
-                    <p className="mb-2 text-xs text-muted-foreground">
-                      将简历全文粘贴到下方，解析结果同样可以编辑
-                    </p>
-                  )}
+                <TabsContent value="saved">
+                  <div className="relative mb-2">
+                    <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={savedSearch}
+                      onChange={(e) => setSavedSearch(e.target.value)}
+                      placeholder="按文件名搜索"
+                      className="h-8 pl-8 text-sm"
+                    />
+                  </div>
+                  <div className="max-h-56 divide-y divide-border/70 overflow-y-auto rounded-lg border">
+                    {savedLoading ? (
+                      <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                        <Loader2 className="size-4 animate-spin" />
+                        加载中…
+                      </div>
+                    ) : savedFiltered.length === 0 ? (
+                      <div className="py-8 text-center text-sm text-muted-foreground">
+                        {savedResumes.length === 0
+                          ? "还没有简历记录，先上传或粘贴一份吧"
+                          : "没有匹配的简历，换个关键词试试"}
+                      </div>
+                    ) : (
+                      savedFiltered.map((r) => {
+                        const active = resume?.id === r.id
+                        return (
+                          <button
+                            key={r.id}
+                            className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-muted/50 ${
+                              active ? "bg-primary/5" : ""
+                            }`}
+                            onClick={() => selectSaved(r)}
+                          >
+                            <FileUp className="size-4 shrink-0 text-muted-foreground" />
+                            <span className="min-w-0 flex-1 truncate text-sm">{r.filename}</span>
+                            <span className="hidden text-xs text-muted-foreground sm:inline">
+                              {new Date(r.created_at).toLocaleDateString("zh-CN")}
+                            </span>
+                            {active ? (
+                              <Badge className="bg-primary/10 text-primary hover:bg-primary/10">使用中</Badge>
+                            ) : (
+                              <span className="shrink-0 text-xs font-medium text-primary">选择</span>
+                            )}
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    选择后系统会直接识别该简历文件用于分析；如需更换，在列表中另选或重新上传即可。
+                  </p>
                 </TabsContent>
               </Tabs>
 
-              <Textarea
-                value={resumeText}
-                onChange={(e) => setResumeText(e.target.value)}
-                placeholder="简历内容将显示在这里，上传或粘贴后可手动微调…"
-                className="mt-2 min-h-56 resize-y font-mono text-xs leading-relaxed"
-              />
-              <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
-                <span>{resumeText.length} 字</span>
-                {resumeText && (
-                  <button
-                    className="flex items-center gap-1 hover:text-destructive"
+              {/* 已载入简历：文件缩略图预览 */}
+              {resume && (
+                <div className="mt-3 flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
+                  {thumbUrl ? (
+                    <img
+                      src={thumbUrl}
+                      alt="简历首页缩略图"
+                      className="h-24 w-[68px] shrink-0 rounded-md border border-border bg-white object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-24 w-[68px] shrink-0 items-center justify-center rounded-md border border-border bg-white">
+                      <FileText className="size-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{resume.filename}</p>
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-emerald-600">
+                      <BadgeCheck className="size-3.5" />
+                      识别完成 · 从文件中提取 {resume.raw_text.length} 字
+                      {resume.file_size != null && ` · ${(resume.file_size / 1024).toFixed(0)} KB`}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      已就绪，可在右侧粘贴 JD 后开始分析
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 shrink-0"
                     onClick={clearResume}
+                    title="移除简历"
                   >
-                    <Trash2 className="size-3" />
-                    清空
-                  </button>
-                )}
-              </div>
+                    <X className="size-4" />
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
