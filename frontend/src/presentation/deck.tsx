@@ -4,12 +4,16 @@ import Agenda, { type DeckSection } from "@/presentation/slides/Agenda"
 import Architecture from "@/presentation/slides/Architecture"
 import Background from "@/presentation/slides/Background"
 import Cover from "@/presentation/slides/Cover"
+import ExportChain from "@/presentation/slides/ExportChain"
 import LlmClient from "@/presentation/slides/LlmClient"
 import MatchAlgorithm from "@/presentation/slides/MatchAlgorithm"
 import Objective from "@/presentation/slides/Objective"
 import Pipeline from "@/presentation/slides/Pipeline"
+import QuickCheck from "@/presentation/slides/QuickCheck"
 import SectionDivider from "@/presentation/slides/SectionDivider"
+import SseStreaming from "@/presentation/slides/SseStreaming"
 import TechStack from "@/presentation/slides/TechStack"
+import TheaterSlide from "@/presentation/slides/TheaterSlide"
 import Thanks from "@/presentation/slides/Thanks"
 
 /** 六个章节（对齐课程考核参考模板的 8 页骨架并扩展）。 */
@@ -79,6 +83,10 @@ export function buildDeck(): SlideDef[] {
     sectionDivider(s3),
     { id: "llm-client", section: s3.title, title: "LLM 可靠调用", fragments: 2, render: (step) => <LlmClient step={step} /> },
     { id: "match-algorithm", section: s3.title, title: "JD 匹配打分", fragments: 2, render: (step) => <MatchAlgorithm step={step} /> },
+    { id: "sse-streaming", section: s3.title, title: "SSE 流式管线", fragments: 3, render: (step) => <SseStreaming step={step} /> },
+    { id: "quick-check", section: s3.title, title: "Quick check 问答门", fragments: 6, render: (step) => <QuickCheck step={step} /> },
+    { id: "theater", section: s3.title, title: "实时分析剧场", fragments: 4, render: (step) => <TheaterSlide step={step} /> },
+    { id: "export-chain", section: s3.title, title: "导出链路", fragments: 3, render: (step) => <ExportChain step={step} /> },
     sectionDivider(s4),
     sectionDivider(s5),
     sectionDivider(s6),
