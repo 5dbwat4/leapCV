@@ -1,10 +1,13 @@
 import type { SlideDef } from "@/presentation/player/types"
 
 import Agenda, { type DeckSection } from "@/presentation/slides/Agenda"
+import Architecture from "@/presentation/slides/Architecture"
 import Background from "@/presentation/slides/Background"
 import Cover from "@/presentation/slides/Cover"
 import Objective from "@/presentation/slides/Objective"
+import Pipeline from "@/presentation/slides/Pipeline"
 import SectionDivider from "@/presentation/slides/SectionDivider"
+import TechStack from "@/presentation/slides/TechStack"
 import Thanks from "@/presentation/slides/Thanks"
 
 /** 六个章节（对齐课程考核参考模板的 8 页骨架并扩展）。 */
@@ -68,6 +71,9 @@ export function buildDeck(): SlideDef[] {
     { id: "background", section: s1.title, title: "课题背景", fragments: 2, render: (step) => <Background step={step} /> },
     { id: "objective", section: s1.title, title: "课题目标", fragments: 2, render: (step) => <Objective step={step} /> },
     sectionDivider(s2),
+    { id: "architecture", section: s2.title, title: "总体架构", fragments: 1, render: (step) => <Architecture step={step} /> },
+    { id: "pipeline", section: s2.title, title: "五阶段分析管线", fragments: 2, render: (step) => <Pipeline step={step} /> },
+    { id: "tech-stack", section: s2.title, title: "技术选型", fragments: 3, render: (step) => <TechStack step={step} /> },
     sectionDivider(s3),
     sectionDivider(s4),
     sectionDivider(s5),
