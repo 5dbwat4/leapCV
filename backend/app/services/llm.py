@@ -33,8 +33,10 @@ def get_client() -> OpenAI:
 
 
 def _extract_json(content: str) -> dict:
-    """从模型输出中提取 JSON 对象，容忍代码围栏与前后缀文本。"""
-    text = content.strip()
+    """从模型输出中提取 JSON 对象，容忍思维标签、代码围栏与前后缀文本。"""
+    text = re.sub(r"<think>[\s\S]*?</think>", "", content).strip()
+    if "<think>" in text:  # 未闭合的思维标签：丢弃其前的内容
+        text = text.split("<think>", 1)[1]
     fence = re.search(r"```(?:json)?\s*(.+?)\s*```", text, re.DOTALL)
     if fence:
         text = fence.group(1)
@@ -48,31 +50,48 @@ def _extract_json(content: str) -> dict:
         raise LLMError("模型输出 JSON 解析失败，请重试。") from e
 
 
-def chat_json(system: str, user: str, temperature: float = 0.3, max_tokens: int = 8000) -> dict:
-    """调用 LLM 并解析 JSON 输出。部分兼容接口不支持 response_format，自动降级。"""
+def chat_json(system: str, user: str, temperature: float = 0.3, max_tokens: int | None = None) -> dict:
+    """调用 LLM 并解析 JSON 输出。
+
+    三级重试梯度：json_object → 无 json_mode → 双倍 token 预算的 json_object。
+    对 Qwen3 等思维模型默认先尝试关闭思考（chat_template_kwargs），端点不支持该参数时
+    后续重试自动去掉，避免兼容接口因未知参数整体报错。
+    """
     client = get_client()
+    budget = max_tokens or settings.llm_max_tokens
+    disable_thinking = not settings.llm_enable_thinking
+    plans = [
+        {"json_mode": True, "budget": budget, "thinking_off": disable_thinking},
+        {"json_mode": False, "budget": budget, "thinking_off": False},
+        {"json_mode": True, "budget": budget * 2, "thinking_off": False},
+    ]
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": user},
     ]
     last_error: Exception | None = None
-    for use_json_mode in (True, False):
+    for i, plan in enumerate(plans, 1):
         try:
-            kwargs = {
+            kwargs: dict = {
                 "model": settings.llm_model,
                 "messages": messages,
                 "temperature": temperature,
-                "max_tokens": max_tokens,
+                "max_tokens": plan["budget"],
             }
-            if use_json_mode:
+            if plan["json_mode"]:
                 kwargs["response_format"] = {"type": "json_object"}
+            if plan["thinking_off"]:
+                kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
             resp = client.chat.completions.create(**kwargs)
-            content = resp.choices[0].message.content or ""
+            choice = resp.choices[0]
+            if choice.finish_reason == "length":
+                logger.warning("第 %d 次尝试输出被截断（finish_reason=length）", i)
+            content = choice.message.content or ""
             return _extract_json(content)
-        except LLMError:
-            # 内容能拿到但 JSON 坏了，换无 json_mode 重试一次
-            last_error = LLMError("模型输出 JSON 解析失败，请重试。")
+        except LLMError as e:
+            last_error = e
+            logger.warning("第 %d 次尝试 JSON 解析失败: %s", i, e)
         except Exception as e:  # 网络/鉴权/参数等
             last_error = e
-            logger.warning("LLM 调用失败 (json_mode=%s): %s", use_json_mode, e)
+            logger.warning("第 %d 次尝试调用失败: %s", i, e)
     raise LLMError(f"大模型调用失败，请检查 .env 中的 API 配置后重试。（{last_error}）")

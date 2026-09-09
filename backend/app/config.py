@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     llm_base_url: str = "https://open.bigmodel.cn/api/paas/v4"
     llm_api_key: str = ""
     llm_model: str = "glm-4.6"
+    # 单次调用 token 上限（思维模型建议调大）
+    llm_max_tokens: int = 16000
+    # 思维模型（Qwen3 等）：False 时首次尝试用 chat_template_kwargs 关闭思考，
+    # 端点不支持该参数时会自动在后续重试中去掉
+    llm_enable_thinking: bool = False
     # 置 1 后管线返回内置演示数据，不调用大模型
     mock_mode: bool = False
 
