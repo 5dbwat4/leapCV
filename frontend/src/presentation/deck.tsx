@@ -4,6 +4,7 @@ import Agenda, { type DeckSection } from "@/presentation/slides/Agenda"
 import Architecture from "@/presentation/slides/Architecture"
 import Background from "@/presentation/slides/Background"
 import Cover from "@/presentation/slides/Cover"
+import { LlmCode, MatcherCode, PipelineCode, SseCode } from "@/presentation/slides/CodeShowcase"
 import ExportChain from "@/presentation/slides/ExportChain"
 import LlmClient from "@/presentation/slides/LlmClient"
 import MatchAlgorithm from "@/presentation/slides/MatchAlgorithm"
@@ -88,6 +89,10 @@ export function buildDeck(): SlideDef[] {
     { id: "theater", section: s3.title, title: "实时分析剧场", fragments: 4, render: (step) => <TheaterSlide step={step} /> },
     { id: "export-chain", section: s3.title, title: "导出链路", fragments: 3, render: (step) => <ExportChain step={step} /> },
     sectionDivider(s4),
+    { id: "code-matcher", section: s4.title, title: "代码：匹配算法", fragments: 2, render: () => <MatcherCode /> },
+    { id: "code-pipeline", section: s4.title, title: "代码：管线骨架", fragments: 2, render: () => <PipelineCode /> },
+    { id: "code-llm", section: s4.title, title: "代码：重试梯度", fragments: 2, render: () => <LlmCode /> },
+    { id: "code-sse", section: s4.title, title: "代码：SSE 桥接", fragments: 2, render: () => <SseCode /> },
     sectionDivider(s5),
     sectionDivider(s6),
     { id: "thanks", title: "致谢", render: () => <Thanks /> },
