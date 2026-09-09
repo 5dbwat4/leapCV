@@ -16,8 +16,9 @@ import { toast } from "sonner"
 import { fetchResumeThumb, fetchResumes, streamOptimize, uploadResume } from "@/api"
 import { apiErrorMessage } from "@/api/client"
 import type { ProgressEvent, ResumeOut } from "@/api/types"
+import AnalysisTheater, { TheaterEventBus } from "@/components/analysis/AnalysisTheater"
 import { Badge } from "@/components/ui/badge"
-import StageProgress, { STAGES, type StageStatus } from "@/components/StageProgress"
+import { STAGES, type StageStatus } from "@/components/StageProgress"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -71,6 +72,10 @@ export default function WorkbenchPage() {
   const [statusMap, setStatusMap] = useState<Record<string, StageStatus>>({})
   const [lastEvent, setLastEvent] = useState<ProgressEvent | null>(null)
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
+  // 分析剧场：result 到达后进入庆祝态，延迟跳转结果页；runId 变化时剧场重挂载（支持重试）
+  const [analyzeDone, setAnalyzeDone] = useState(false)
+  const [runId, setRunId] = useState(0)
+  const busRef = useRef<TheaterEventBus | null>(null)
 
   // 「从已有简历中选择」
   const [savedResumes, setSavedResumes] = useState<ResumeOut[]>([])
@@ -133,7 +138,8 @@ export default function WorkbenchPage() {
   }
 
   const startAnalyze = async () => {
-    if (analyzing) return
+    // 运行中防重复点击；出错态允许在剧场内直接重试
+    if (analyzing && !analyzeError) return
     if (!resume) {
       toast.error("请先上传简历或从已有简历中选择一份")
       return
@@ -145,8 +151,14 @@ export default function WorkbenchPage() {
 
     setAnalyzing(true)
     setAnalyzeError(null)
+    setAnalyzeDone(false)
     setStatusMap({ [STAGES[0].key]: "running" })
     setLastEvent(null)
+    setRunId((id) => id + 1)
+
+    // 剧场事件总线：细粒度 SSE 事件经此转发给全屏分析剧场
+    const bus = new TheaterEventBus()
+    busRef.current = bus
 
     try {
       const resumeId = resume.id
@@ -169,21 +181,37 @@ export default function WorkbenchPage() {
           })
         },
         controller.signal,
+        // 第 4 参：所有 SSE 事件转发给剧场（progress/result/error 原有行为不变）
+        (event, data) => bus.emit(event, data),
       )
       setStatusMap(Object.fromEntries(STAGES.map((s) => [s.key, "done"])))
+      // 剧场切换为庆祝态，留 ~900ms 展示动画再跳转结果页
+      setAnalyzeDone(true)
       toast.success("分析完成")
+      await new Promise((resolve) => setTimeout(resolve, 900))
       navigate(`/result/${stream.id}`)
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
         toast.info("已取消本次分析")
+        setAnalyzing(false) // 关闭剧场回工作台
       } else {
         const msg = err instanceof Error ? err.message : "分析失败"
         setAnalyzeError(msg)
         toast.error(msg)
+        // 保持 analyzing=true：剧场切换为错误态，提供重试 / 返回
       }
     } finally {
-      setAnalyzing(false)
       abortRef.current = null
+    }
+  }
+
+  /** 剧场取消按钮：出错时直接关闭剧场；运行中则中断分析 */
+  const cancelAnalysis = () => {
+    if (analyzeError) {
+      setAnalyzing(false)
+      setAnalyzeError(null)
+    } else {
+      abortRef.current?.abort()
     }
   }
 
@@ -197,31 +225,19 @@ export default function WorkbenchPage() {
         </p>
       </section>
 
-      {analyzing ? (
-        <Card className="mx-auto max-w-md">
-          <CardHeader>
-            <CardTitle className="text-base">AI 正在分析你的简历</CardTitle>
-            <CardDescription>整个过程约需 1-2 分钟，请勿关闭页面</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <StageProgress stages={STAGES} statusMap={statusMap} lastEvent={lastEvent} error={analyzeError} />
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => abortRef.current?.abort()}
-                disabled={!!analyzeError}
-              >
-                取消分析
-              </Button>
-              {analyzeError && (
-                <Button className="flex-1" onClick={startAnalyze}>
-                  重试
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      {analyzing && busRef.current ? (
+        // 全屏 AI 分析剧场：fixed inset-0 接管视口；出错时剧场内提供重试 / 返回
+        <AnalysisTheater
+          key={runId}
+          bus={busRef.current}
+          statusMap={statusMap}
+          progress={analyzeDone ? 100 : (lastEvent?.progress ?? 0)}
+          message={lastEvent?.message ?? null}
+          phase={analyzeError ? "error" : analyzeDone ? "done" : "running"}
+          error={analyzeError}
+          onCancel={cancelAnalysis}
+          onRetry={() => void startAnalyze()}
+        />
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
           {/* 左：简历输入 */}

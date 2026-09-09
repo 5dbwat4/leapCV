@@ -1,0 +1,103 @@
+/* 分析剧场专用样式：背景光斑漂移、细网格与深色滚动条 */
+
+/* 模糊光斑：纯 CSS 动画驱动，避免 framer-motion 逐帧更新带来的开销 */
+.theater-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.5;
+  will-change: transform;
+}
+.theater-blob-1 {
+  width: 42rem;
+  height: 42rem;
+  left: -12rem;
+  top: -14rem;
+  background: #4f46e5; /* 靛蓝 */
+  animation: theater-drift-1 22s ease-in-out infinite alternate;
+}
+.theater-blob-2 {
+  width: 38rem;
+  height: 38rem;
+  right: -10rem;
+  top: 25%;
+  background: #9333ea; /* 紫 */
+  animation: theater-drift-2 26s ease-in-out infinite alternate;
+}
+.theater-blob-3 {
+  width: 34rem;
+  height: 34rem;
+  left: 32%;
+  bottom: -16rem;
+  background: #0e7490; /* 青 */
+  animation: theater-drift-3 20s ease-in-out infinite alternate;
+}
+@keyframes theater-drift-1 {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(7rem, 5rem, 0) scale(1.18);
+  }
+}
+@keyframes theater-drift-2 {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.1);
+  }
+  to {
+    transform: translate3d(-6rem, -4rem, 0) scale(0.95);
+  }
+}
+@keyframes theater-drift-3 {
+  from {
+    transform: translate3d(0, 0, 0) scale(0.95);
+  }
+  to {
+    transform: translate3d(5rem, -6rem, 0) scale(1.2);
+  }
+}
+
+/* 细网格背景（径向遮罩，边缘淡出） */
+.theater-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse at center, black 25%, transparent 72%);
+  mask-image: radial-gradient(ellipse at center, black 25%, transparent 72%);
+}
+
+/* 剧场深色容器内的滚动条 */
+.theater-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.theater-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.theater-scroll::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.theater-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 白色简历纸张上的滚动条（深色滑块） */
+.paper-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.22) transparent;
+}
+.paper-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.paper-scroll::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.22);
+}
+.paper-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
