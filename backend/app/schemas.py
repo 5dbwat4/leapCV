@@ -57,6 +57,13 @@ class OptimizeRequest(BaseModel):
     target_position: str = Field(default="", max_length=100)
 
 
+class OptimizeAnswerRequest(BaseModel):
+    """Quick check 作答：answer 为 None 表示跳过（管线改用占位符）。"""
+    run_id: str = Field(min_length=8, max_length=64)
+    question_id: str = Field(min_length=1, max_length=64)
+    answer: str | None = Field(default=None, max_length=500)
+
+
 class HistoryItem(BaseModel):
     id: int
     target_position: str
