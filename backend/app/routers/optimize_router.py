@@ -82,12 +82,16 @@ def optimize(
                 kind, payload = q.get()
                 if kind == "done":
                     # 用独立会话落库（请求级 session 在流式响应期间不可依赖）
+                    # target_position 未显式提供时，回退用 JD 抽取出的岗位名，保证历史记录可读
+                    record_position = (
+                        body.target_position or str(payload.get("position_name") or "")
+                    )[:100]
                     session = SessionLocal()
                     try:
                         record = Optimization(
                             user_id=user.id,
                             resume_id=body.resume_id,
-                            target_position=body.target_position,
+                            target_position=record_position,
                             jd_text=body.jd_text,
                             result_json=json.dumps(payload, ensure_ascii=False),
                             match_score=int(payload.get("match", {}).get("total", 0)),

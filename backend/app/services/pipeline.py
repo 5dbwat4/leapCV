@@ -357,6 +357,7 @@ def run_pipeline(
         "mock": False,
         "summary": summary,
         "highlights": highlights,
+        "position_name": position_name,
         "match": match_result,
         "resume_overview": {
             "name": resume_struct.get("name", ""),

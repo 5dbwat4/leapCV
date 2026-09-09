@@ -72,6 +72,7 @@ MOCK_RESUME_STRUCT: dict = {
 
 MOCK_RESULT: dict = {
     "mock": True,
+    "position_name": "Python后端开发工程师",
     "summary": (
         "你的简历具备 3 年 Python 后端经验，与目标岗位的核心要求（FastAPI/Flask、MySQL、Redis、"
         "Docker）匹配度中等偏上。主要差距在于缺少高并发场景与微服务治理经验的量化描述，且多数"
