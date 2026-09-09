@@ -1,0 +1,132 @@
+\documentclass[10.5pt,fontset=windows]{ctexart}
+\usepackage[a4paper,top=1.5cm,bottom=1.5cm,left=1.7cm,right=1.7cm]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{needspace}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\definecolor{maincolor}{RGB}{0,82,155}
+\definecolor{graytext}{RGB}{90,90,90}
+
+% 章节标题
+\newcommand{\rsection}[1]{%
+  \Needspace*{6\baselineskip}%
+  \vspace{9pt}%
+  {\color{maincolor}\heiti\zihao{4}#1}\par
+  \vspace{1pt}{\color{maincolor}\rule{\textwidth}{1pt}}\par
+  \vspace{3pt}}
+
+% 条目标题行：{职位/项目}{右侧时间}
+\newcommand{\entryhead}[2]{%
+  \Needspace*{3\baselineskip}%
+  {\heiti #1}\hfill{\color{graytext}\small #2}\par\vspace{1pt}}
+
+\newcommand{\subhead}[2]{%
+  {\heiti #1}\hfill{\color{graytext}\small #2}\par\vspace{1pt}}
+
+\setlist[itemize]{leftmargin=1.2em, itemsep=1pt, parsep=0pt, topsep=2pt, label={\small\textbullet}}
+
+\begin{document}
+
+% ==================== 头部 ====================
+\begin{center}
+  {\zihao{2}\heiti 陈雨桐}\\[4pt]
+  {\zihao{-4}求职意向：资深前端开发工程师（工程化方向）}\quad
+  {\color{graytext}\zihao{-4}|}\quad
+  {\zihao{-4}期望城市：杭州}\quad
+  {\color{graytext}\zihao{-4}|}\quad
+  {\zihao{-4}期望薪资：25--35K}
+\end{center}
+\vspace{2pt}
+\begin{center}
+  \zihao{-4}女\quad 1998 年 3 月\quad 本科\quad 7 年经验\quad
+  电话：158-6677-8899\quad 邮箱：chenyutong.fe@foxmail.com
+\end{center}
+
+% ==================== 专业技能 ====================
+\rsection{专业技能}
+\begin{itemize}
+  \item \textbf{语言基础}：精通 JavaScript / TypeScript，深入理解事件循环、闭包、原型链与 ES 最新特性；熟悉函数式编程思想与不可变数据结构。
+  \item \textbf{框架与生态}：精通 React 及其生态（Redux Toolkit、React Query、Zustand），熟练使用 Vue 3 / Pinia；深入理解 Virtual DOM、Fiber 架构与响应式原理。
+  \item \textbf{前端工程化}：熟练使用 Vite、Webpack 进行构建调优，有 pnpm + Turborepo 的 Monorepo 与 qiankun 微前端落地经验。
+  \item \textbf{跨端开发}：熟悉 Taro、React Native 跨端方案，有微信/支付宝/抖音小程序、H5、App 多端交付经验。
+  \item \textbf{性能优化}：掌握首屏加载、渲染性能、内存泄漏等问题的定位与优化方法，熟悉 Core Web Vitals 指标体系与 RUM 采集方案。
+  \item \textbf{可视化}：熟练使用 ECharts、AntV，有 Canvas / WebGL 数据大屏项目经验，了解 Three.js 基础场景搭建。
+  \item \textbf{服务端能力}：熟练使用 Node.js（NestJS / Express）开发 BFF 与工程效率工具，了解 Docker 容器化部署。
+  \item \textbf{质量保障}：推动单元测试（Vitest）、端到端测试（Playwright）与 Code Review 在团队落地；熟悉 Sentry 等前端监控与告警体系。
+\end{itemize}
+
+% ==================== 工作经历 ====================
+\rsection{工作经历}
+
+\entryhead{杭州临镜网络科技有限公司\quad ——\quad 资深前端开发工程师（效率工程组）}{2021.04 -- 至今}
+\begin{itemize}
+  \item 负责低代码搭建平台的前端架构设计与核心开发，平台累计产出页面 8,000+，服务公司 30 余条业务线。
+  \item 主导前端基础设施升级：完成 Webpack 到 Vite 的迁移，本地冷启动时间从 45s 降至 1.8s，生产构建时间缩短 78\%。
+  \item 从 0 到 1 设计并落地公司级组件库 lucis-ui（60+ 组件），统一 5 条产品线的 UI 语言，组件复用率达 85\%，需求平均开发耗时下降 35\%。
+  \item 搭建前端监控体系（JS 错误、性能指标、白屏检测），线上问题平均定位时间从 2 小时缩短至 15 分钟。
+  \item 主导性能专项：通过路由级代码分割、关键资源预加载与图片治理，核心页面 LCP 从 4.2s 优化至 1.6s，跳出率下降 12\%。
+\end{itemize}
+
+\entryhead{上海辰光信息技术有限公司\quad ——\quad 前端开发工程师（商家平台部）}{2019.07 -- 2021.03}
+\begin{itemize}
+  \item 负责跨境电商商家后台（Vue 3 + TypeScript）的迭代与维护，服务 10 万+ 商家用户。
+  \item 重构商品发布流程的动态表单引擎，以配置化方式支持 200+ 表单项，新类目接入从 3 人日降至 0.5 人日。
+  \item 开发大促运营可视化大屏（ECharts + WebSocket 实时推送），支撑大促期间作战指挥室的实时决策场景。
+  \item 推动团队从 JavaScript 到 TypeScript 的渐进式迁移，制定迁移规范并完成存量代码改造，类型覆盖率达 92\%。
+\end{itemize}
+
+% ==================== 项目经历 ====================
+\rsection{项目经历}
+
+\entryhead{低代码搭建平台 magiche（前端负责人，4 人团队）}{2022.03 -- 2023.08}
+\begin{itemize}
+  \item \textbf{项目背景}：运营、市场等非研发角色的页面需求占研发需求总量约 40\%，交付瓶颈明显，需要搭建平台释放研发人力。
+  \item \textbf{方案与实现}：设计物料协议与渲染引擎，实现“物料注册、画布编排、属性配置、多端发布”全流程；基于 iframe 隔离编辑器与画布运行时，解决样式与全局变量污染问题；实现基于命令模式的撤销重做与多分辨率适配。
+  \item \textbf{难点攻坚}：针对复杂页面编辑卡顿问题，引入图层按需渲染与脏区更新策略，千级节点页面编辑帧率稳定在 55fps 以上。
+  \item \textbf{项目成果}：平台累计产出页面 8,000+，非研发角色可独立完成活动页搭建，研发人力投入节约 40\%，页面交付周期从 3 天缩短至 2 小时。
+\end{itemize}
+
+\entryhead{跨端小程序矩阵（核心开发）}{2021.06 -- 2022.02}
+\begin{itemize}
+  \item \textbf{项目背景}：业务需同时覆盖微信、支付宝、抖音三端小程序，独立开发维护成本高。
+  \item \textbf{方案与实现}：基于 Taro 3 + React 实现一套代码编译三端；封装统一请求层、登录态与埋点 SDK，抹平端能力差异；通过分包加载与依赖裁剪将主包体积从 2.1MB 降至 1.4MB。
+  \item \textbf{项目成果}：三端累计用户 300 万+，端间代码复用率 90\%，新需求只需一次开发、三端同步发布。
+\end{itemize}
+
+\entryhead{前端稳定性与体验专项（Owner）}{2023.09 -- 2024.01}
+\begin{itemize}
+  \item \textbf{项目背景}：线上偶发白屏与核心链路 JS 错误，问题发现依赖用户反馈，平均修复周期长。
+  \item \textbf{方案与实现}：接入 Sentry 并完成源码映射与告警分级；建设 Playwright 端到端测试 120+ 用例并接入 CI 卡口；设计前端灰度发布与快速回滚机制。
+  \item \textbf{项目成果}：白屏率从 0.08\% 降至 0.005\%，核心链路 P0 级前端故障全年清零，需求回归测试成本下降 60\%。
+\end{itemize}
+
+% ==================== 技术分享与影响力 ====================
+\rsection{技术分享与影响力}
+\begin{itemize}
+  \item 掘金专栏作者，专注前端工程化与性能优化方向，累计发表文章 40 余篇，总获赞 1.8 万，粉丝 1.2 万。
+  \item 公司内部《React 性能优化实战》系列分享 4 期，沉淀文档被 20 余个团队引用为标准参考资料。
+  \item 参与 Ant Design 社区文档勘误与翻译贡献，累计合并 PR 8 个。
+\end{itemize}
+
+% ==================== 教育背景 ====================
+\rsection{教育背景}
+\subhead{浙江工业大学\quad ——\quad 数字媒体技术\quad 本科}{2015.09 -- 2019.06}
+\begin{itemize}
+  \item 主修课程：数据结构、Web 前端开发、人机交互、计算机图形学、数据库原理。
+  \item 获校程序设计竞赛二等奖两次，校级优秀毕业生；担任校前端兴趣社团社长，组织前端技术沙龙 10 余场。
+\end{itemize}
+
+% ==================== 证书与其他 ====================
+\rsection{证书与其他}
+\begin{itemize}
+  \item 大学英语六级（CET-6），可流畅阅读英文技术文档与规范。
+  \item 软考中级——软件设计师。
+  \item 个人作品集：chenyutong.dev（含组件库文档、可视化大屏 Demo 与开源项目）。
+\end{itemize}
+
+% ==================== 自我评价 ====================
+\rsection{自我评价}
+对用户体验与工程质量有极致追求，习惯用数据和度量驱动技术决策；擅长从流程和工具层面解决团队共性问题，推动基建落地；乐于分享，多次组织团队内外技术交流活动，协作口碑良好。
+
+\end{document}

@@ -1,0 +1,136 @@
+\documentclass[10.5pt,fontset=windows]{ctexart}
+\usepackage[a4paper,top=1.5cm,bottom=1.5cm,left=1.7cm,right=1.7cm]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{needspace}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\definecolor{maincolor}{RGB}{0,82,155}
+\definecolor{graytext}{RGB}{90,90,90}
+
+% 章节标题
+\newcommand{\rsection}[1]{%
+  \Needspace*{6\baselineskip}%
+  \vspace{9pt}%
+  {\color{maincolor}\heiti\zihao{4}#1}\par
+  \vspace{1pt}{\color{maincolor}\rule{\textwidth}{1pt}}\par
+  \vspace{3pt}}
+
+% 条目标题行：{职位/项目}{右侧时间}
+\newcommand{\entryhead}[2]{%
+  \Needspace*{3\baselineskip}%
+  {\heiti #1}\hfill{\color{graytext}\small #2}\par\vspace{1pt}}
+
+\newcommand{\subhead}[2]{%
+  {\heiti #1}\hfill{\color{graytext}\small #2}\par\vspace{1pt}}
+
+\setlist[itemize]{leftmargin=1.2em, itemsep=1pt, parsep=0pt, topsep=2pt, label={\small\textbullet}}
+
+\begin{document}
+
+% ==================== 头部 ====================
+\begin{center}
+  {\zihao{2}\heiti 李振宇}\\[4pt]
+  {\zihao{-4}求职意向：高级 Java 开发工程师（分布式架构方向）}\quad
+  {\color{graytext}\zihao{-4}|}\quad
+  {\zihao{-4}期望城市：北京}\quad
+  {\color{graytext}\zihao{-4}|}\quad
+  {\zihao{-4}期望薪资：35--50K}
+\end{center}
+\vspace{2pt}
+\begin{center}
+  \zihao{-4}男\quad 1993 年 10 月\quad 硕士\quad 9 年经验\quad
+  电话：139-1122-3344\quad 邮箱：lizhenyu.java@163.com
+\end{center}
+
+% ==================== 专业技能 ====================
+\rsection{专业技能}
+\begin{itemize}
+  \item \textbf{语言基础}：精通 Java，深入理解 JVM 内存模型、GC 调优与类加载机制；熟练掌握并发编程（JUC、线程池原理、锁优化、CompletableFuture 编排）。
+  \item \textbf{后端框架}：精通 Spring Boot、Spring Cloud Alibaba（Nacos、Sentinel、Seata）与 MyBatis，阅读过 Spring IoC、AOP 核心源码，理解其扩展点设计。
+  \item \textbf{数据库与缓存}：精通 MySQL 索引设计、SQL 调优、主从复制与高可用方案，有 ShardingSphere 分库分表落地经验；深入理解 Redis 数据结构、分布式锁、缓存一致性与热点 Key 治理。
+  \item \textbf{消息中间件}：熟练使用 Kafka、RocketMQ，掌握事务消息、顺序消息、Exactly-Once 语义与消息积压治理方案。
+  \item \textbf{大数据生态}：熟悉 Flink 实时计算（Checkpoint 机制、状态管理、反压调优）、Spark 离线数仓，使用过 Hive、ClickHouse、Doris 等 OLAP 引擎。
+  \item \textbf{检索与存储}：熟悉 Elasticsearch 集群规划、分片设计与查询调优，使用过 HBase、TiDB 等存储组件。
+  \item \textbf{云原生与可观测}：熟练使用 Docker 与 Kubernetes，掌握 Helm、ArgoCD GitOps 发布流程；熟悉 Prometheus + Grafana、SkyWalking、ELK 可观测体系。
+  \item \textbf{架构能力}：具备高并发、高可用系统设计经验，熟悉限流、熔断、降级、幂等、分布式事务等一致性保障方案；主导过 3 次核心系统架构升级。
+\end{itemize}
+
+% ==================== 工作经历 ====================
+\rsection{工作经历}
+
+\entryhead{北京智数科技有限公司\quad ——\quad 高级 Java 开发工程师（交易中台组）}{2020.03 -- 至今}
+\begin{itemize}
+  \item 作为交易中台技术负责人（带领 6 人团队），统一支撑公司 5 条业务线的订单、支付、履约能力，需求平均交付周期从 2 周缩短至 3 天。
+  \item 主导交易核心链路重构，将同步调用改造为“RocketMQ 事务消息 + 本地消息表”的最终一致方案，订单创建接口 P99 延迟从 850ms 降至 210ms。
+  \item 设计“Caffeine + Redis”二级缓存与缓存总线方案解决热点商品读放大问题，大促期间缓存命中率 99.2\%，数据库 QPS 下降 70\%。
+  \item 搭建基于 Flink 的实时业务监控体系，对订单状态流转进行实时校验与自动补偿，资损类故障平均发现时间从小时级降至 1 分钟以内。
+  \item 制定团队编码规范、故障复盘机制并推动混沌工程演练常态化，全年核心服务 SLA 达到 99.99\%。
+\end{itemize}
+
+\entryhead{北京百川在线网络有限公司\quad ——\quad Java 开发工程师（电商事业部）}{2017.07 -- 2020.02}
+\begin{itemize}
+  \item 负责营销中心优惠券、满减、拼团等核心玩法开发与迭代，支撑双 11 期间峰值 15 万次核销/分钟的业务场景。
+  \item 主导优惠券系统重构：通过 Redis Lua 原子扣减 + MQ 异步落库解决超发与并发核销问题，核销接口吞吐量提升 6 倍。
+  \item 负责订单中心分库分表改造（16 库 256 表），设计双写灰度与数据比对校验方案，零故障完成 2.3 亿条历史订单迁移。
+  \item 参与统一 API 网关建设，实现鉴权、限流、灰度路由等能力，接入 40 余个上游业务方。
+\end{itemize}
+
+% ==================== 项目经历 ====================
+\rsection{项目经历}
+
+\entryhead{实时数据一致性保障平台（架构师）}{2023.05 -- 2024.02}
+\begin{itemize}
+  \item \textbf{项目背景}：多机房部署与异构存储（MySQL / Redis / ES / ClickHouse）并存，数据不一致导致的资损故障月均 3 起以上。
+  \item \textbf{方案与实现}：基于 Flink CDC 构建核心库到下游存储的实时同步链路；设计基于 binlog 位点的对账与自动修复机制；开发一致性巡检平台，定时抽样比对多端数据并生成差异报告。
+  \item \textbf{难点攻坚}：解决 Flink 大状态作业反压问题，通过 RocksDB 状态后端调优与算子链拆分，作业连续稳定运行超过 300 天，Checkpoint 成功率 100\%。
+  \item \textbf{项目成果}：数据不一致类故障下降 92\%，数据巡检覆盖率从人工抽检约 5\% 提升至核心链路 100\%，相关方案沉淀为公司标准架构。
+\end{itemize}
+
+\entryhead{交易中台统一订单服务（技术负责人，6 人团队）}{2021.08 -- 2022.06}
+\begin{itemize}
+  \item \textbf{项目背景}：5 条业务线各自维护订单模块，重复建设严重、口径不一致，大促期间重复扩容成本高。
+  \item \textbf{方案与实现}：抽象“订单模板 + 策略扩展点”的可配置订单模型，通过 Groovy 脚本热更新支撑差异化履约逻辑；统一订单状态机，由状态机引擎驱动正向流转与逆向退换货；对接统一库存与支付中台。
+  \item \textbf{项目成果}：中台承接 5 条业务线，日均订单 1,200 万单，峰值 3.5 万单/秒；新业务线接入成本从平均 15 人日降至 2 人日。
+\end{itemize}
+
+\entryhead{全链路压测与容量规划体系（核心开发）}{2020.09 -- 2020.12}
+\begin{itemize}
+  \item \textbf{项目背景}：大促容量评估依赖经验估算，历史上曾多次因容量不足引发线上事故。
+  \item \textbf{方案与实现}：设计压测流量标记全链路透传方案，实现影子库 + 影子表数据隔离；基于线上真实流量模型进行录制回放，输出单链路与全链路容量评估报告。
+  \item \textbf{项目成果}：完成 23 个核心应用的压测覆盖，精准定位 7 处容量瓶颈；次年大促依据压测数据精准扩容，服务器成本节约 25\%。
+\end{itemize}
+
+% ==================== 开源与技术影响力 ====================
+\rsection{开源与技术影响力}
+\begin{itemize}
+  \item Apache ShardingSphere 社区 Contributor，累计提交 PR 12 个，主要涉及弹性伸缩与数据加密模块。
+  \item GitHub 开源项目 easy-trace（轻量级分布式链路追踪 SDK）作者，获得 1.2k Star、200+ Fork。
+  \item 技术公众号与博客作者，累计发表分布式系统与性能优化文章 90 余篇，单篇最高阅读量 5 万+。
+\end{itemize}
+
+% ==================== 教育背景 ====================
+\rsection{教育背景}
+\subhead{北京邮电大学\quad ——\quad 计算机技术\quad 硕士}{2015.09 -- 2017.06}
+\begin{itemize}
+  \item 研究方向为分布式系统，硕士论文《高并发场景下的分布式事务一致性研究》获校级优秀论文。
+\end{itemize}
+\subhead{吉林大学\quad ——\quad 软件工程\quad 本科}{2011.09 -- 2015.06}
+\begin{itemize}
+  \item 主修课程：数据结构、操作系统、计算机网络、数据库系统、编译原理。
+  \item 连续三年获校一等奖学金，ACM-ICPC 亚洲区域赛铜奖。
+\end{itemize}
+
+% ==================== 荣誉奖项与证书 ====================
+\rsection{荣誉奖项与证书}
+\begin{itemize}
+  \item 公司年度技术突破奖（2023）、金牌团队奖（2021）。
+  \item 软考高级——系统架构设计师；Oracle Certified Professional, Java SE 8 Programmer。
+  \item 大学英语六级（CET-6），可作为工作语言阅读英文文档与技术书籍。
+\end{itemize}
+
+% ==================== 自我评价 ====================
+\rsection{自我评价}
+对技术有热情，善于从系统全局视角分析和解决问题；具备良好的团队管理与跨部门协作能力，多次主导跨团队项目按期交付；注重工程规范与稳定性建设，坚持“可度量、可复现、可沉淀”的工作方法。
+
+\end{document}

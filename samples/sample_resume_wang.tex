@@ -1,0 +1,135 @@
+\documentclass[10.5pt,fontset=windows]{ctexart}
+\usepackage[a4paper,top=1.5cm,bottom=1.5cm,left=1.7cm,right=1.7cm]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{needspace}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\definecolor{maincolor}{RGB}{0,82,155}
+\definecolor{graytext}{RGB}{90,90,90}
+
+% 章节标题
+\newcommand{\rsection}[1]{%
+  \Needspace*{6\baselineskip}%
+  \vspace{9pt}%
+  {\color{maincolor}\heiti\zihao{4}#1}\par
+  \vspace{1pt}{\color{maincolor}\rule{\textwidth}{1pt}}\par
+  \vspace{3pt}}
+
+% 条目标题行：{职位/项目}{右侧时间}
+\newcommand{\entryhead}[2]{%
+  \Needspace*{3\baselineskip}%
+  {\heiti #1}\hfill{\color{graytext}\small #2}\par\vspace{1pt}}
+
+\newcommand{\subhead}[2]{%
+  {\heiti #1}\hfill{\color{graytext}\small #2}\par\vspace{1pt}}
+
+\setlist[itemize]{leftmargin=1.2em, itemsep=1pt, parsep=0pt, topsep=2pt, label={\small\textbullet}}
+
+\begin{document}
+
+% ==================== 头部 ====================
+\begin{center}
+  {\zihao{2}\heiti 王思远}\\[4pt]
+  {\zihao{-4}求职意向：推荐算法专家}\quad
+  {\color{graytext}\zihao{-4}|}\quad
+  {\zihao{-4}期望城市：上海}\quad
+  {\color{graytext}\zihao{-4}|}\quad
+  {\zihao{-4}期望薪资：45--65K}
+\end{center}
+\vspace{2pt}
+\begin{center}
+  \zihao{-4}男\quad 1992 年 8 月\quad 硕士\quad 8 年经验\quad
+  电话：137-8899-0011\quad 邮箱：wangsiyuan.algo@outlook.com
+\end{center}
+
+% ==================== 专业技能 ====================
+\rsection{专业技能}
+\begin{itemize}
+  \item \textbf{机器学习基础}：深入理解 LR、GBDT、FM/FFM 及主流深度 CTR/CVR 模型（Wide\&Deep、DeepFM、DIN、DIEN、MMoE、PLE）；熟悉多目标建模、损失设计与概率校准方法。
+  \item \textbf{召回与排序}：精通协同过滤、双塔召回、图召回（GraphSAGE）与序列召回（SASRec）；熟悉粗排三塔架构与知识蒸馏的落地实践。
+  \item \textbf{深度学习框架}：熟练使用 PyTorch、TensorFlow，熟悉参数服务器架构与大规模稀疏模型训练；关注 LLM 在推荐召回、特征增强与生成式推荐中的应用。
+  \item \textbf{大数据处理}：熟练使用 Spark、Flink 进行离线与实时特征加工，熟悉 Hive 数仓建设与在线样本流（样本拼接、特征快照）架构。
+  \item \textbf{工程化与部署}：熟悉 TensorFlow Serving / ONNX 模型服务化，有特征平台（Feature Store）与 A/B 实验平台建设经验，掌握假设检验与实验显著性评审方法。
+  \item \textbf{相关领域}：了解搜索相关性建模与广告精排机制；熟悉去偏（Debias）、因果推断与 Uplift 建模方法。
+  \item \textbf{编程语言}：Python 为主力语言，能使用 C++ 编写高性能算子；SQL 熟练，Git / Linux 环境日常使用无障碍。
+\end{itemize}
+
+% ==================== 工作经历 ====================
+\rsection{工作经历}
+
+\entryhead{上海澜图信息技术有限公司\quad ——\quad 推荐算法专家（短视频推荐）}{2021.03 -- 至今}
+\begin{itemize}
+  \item 负责主 feed 精排模型迭代与多目标体系搭建，人均使用时长提升 8.4\%，次日留存提升 1.2pt。
+  \item 主导多目标建模升级：将精排从 ESMM 演进为 PLE + 动态权重融合方案，有效播放率提升 12\%，负反馈率下降 18\%。
+  \item 设计长短期兴趣分离的序列建模方案（引入 SIM 长序列检索），CTR 提升 3.1\%，该方案已成为团队标准组件。
+  \item 从 0 到 1 搭建特征平台与在线样本流，样本延迟从小时级降至分钟级，模型迭代周期从 2 周缩短至 3 天。
+  \item 负责团队 A/B 实验方案设计与显著性评审，年均支持 20+ 个模型并行实验，显著降低实验误判率。
+\end{itemize}
+
+\entryhead{北京星潮科技有限公司\quad ——\quad 推荐算法工程师（电商推荐）}{2018.07 -- 2021.02}
+\begin{itemize}
+  \item 负责商品推荐精排与召回链路优化，双十一期间推荐渠道 GMV 占比从 19\% 提升至 28\%。
+  \item 落地图神经网络召回（GraphSAGE），召回结果的品类多样性提升 20\%，长尾商品曝光占比提升 5pt。
+  \item 设计基于内容 embedding 与 Thompson Sampling 的冷启动探索方案，新品冷启动周期从 7 天缩短至 2 天。
+  \item 在重排模块引入 DPP 多样性算法，人均 GMV 提升 2.3\%，7 日退货率下降 6\%。
+  \item 与工程团队共建大规模稀疏训练框架，支持百亿参数稀疏模型的日级全量更新。
+\end{itemize}
+
+% ==================== 项目经历 ====================
+\rsection{项目经历}
+
+\entryhead{短视频多目标精排体系重构（Owner）}{2022.06 -- 2023.05}
+\begin{itemize}
+  \item \textbf{项目背景}：单一 CTR 目标导致标题党内容泛滥，完播率虚高但时长与留存持续受损，需要平衡消费深度与生态健康度。
+  \item \textbf{方案与实现}：采用 PLE 结构进行任务特征共享与独立塔建模，引入 GradNorm 自适应损失权重；融合公式按场景分桶调参；对点击、时长目标做 Isotonic Regression 概率校准，修正 position bias 与流行度偏差。
+  \item \textbf{难点攻坚}：分享、评论等稀疏目标样本方差大、易过拟合，通过迁移共享表征与样本加权策略将稀疏目标 AUC 提升约 0.8pt。
+  \item \textbf{项目成果}：人均使用时长 +8.4\%，次日留存 +1.2pt，举报率下降 15\%，内容生态指标与商业指标同步改善。
+\end{itemize}
+
+\entryhead{长序列行为建模与实时特征升级（核心开发）}{2021.09 -- 2022.05}
+\begin{itemize}
+  \item \textbf{项目背景}：原模型仅使用最近 50 个行为，无法刻画用户长期兴趣，且特征链路 T+1 更新导致兴趣捕捉滞后。
+  \item \textbf{方案与实现}：引入 SIM 检索式长序列建模，覆盖用户终身行为（1 年+），GSU 硬检索 + ESU 加权聚合；基于 Flink 重建实时特征链路，并建设离在线特征一致性校验任务（一致率 99.5\%）。
+  \item \textbf{项目成果}：CTR +3.1\%，配合模型天级更新与分钟级特征带来整体 +1.8\% 增益；特征回溯与复用能力沉淀至公司特征平台。
+\end{itemize}
+
+\entryhead{电商大促流量调控系统（Owner，跨团队合作）}{2020.08 -- 2020.11}
+\begin{itemize}
+  \item \textbf{项目背景}：大促期间 GMV 目标与用户体验、品类结构目标冲突，人工调流量效率低且粒度粗。
+  \item \textbf{方案与实现}：设计基于模型预测控制（MPC）的流量调控框架，在多目标约束下动态调整类目与店铺流量配比；以上下文 bandit 做探索兜底，保证长尾曝光。
+  \item \textbf{项目成果}：双十一 GMV 超目标 6\% 达成，用户负反馈率未上升；调控框架沉淀为公司级平台，服务 8 个业务场景。
+\end{itemize}
+
+% ==================== 论文与专利 ====================
+\rsection{论文与专利}
+\begin{itemize}
+  \item 一作论文 2 篇，发表于 CIKM、RecSys（Applied Research Track），主题分别为长序列行为建模与多目标概率校准。
+  \item 发明专利 4 项（已授权 2 项）：序列特征检索方法、冷启动流量探索策略、多样性重排方法、实时样本拼接架构。
+\end{itemize}
+
+% ==================== 竞赛与获奖 ====================
+\rsection{竞赛与获奖}
+\begin{itemize}
+  \item 阿里云天池大数据推荐算法赛冠军（1 / 4,812 队）。
+  \item Kaggle Avito Context Ad Recommendations 银牌（Top 2\%）。
+  \item 全国大学生数学建模竞赛一等奖；公司年度最佳技术贡献奖（2022）。
+\end{itemize}
+
+% ==================== 教育背景 ====================
+\rsection{教育背景}
+\subhead{上海交通大学\quad ——\quad 计算机科学与技术\quad 硕士}{2015.09 -- 2018.03}
+\begin{itemize}
+  \item 研究方向为推荐系统与信息检索，硕士论文《面向大规模推荐的深度序列建模方法研究》。
+\end{itemize}
+\subhead{南京大学\quad ——\quad 统计学\quad 本科}{2011.09 -- 2015.06}
+\begin{itemize}
+  \item 主修课程：概率论与数理统计、机器学习、数值计算、最优化方法。
+  \item 连续三年获人民奖学金，全国大学生数学建模竞赛一等奖。
+\end{itemize}
+
+% ==================== 自我评价 ====================
+\rsection{自我评价}
+兼具算法深度与工程落地能力，坚持“指标收益必须可归因、可复现”的工作原则；对推荐系统生态与业务目标有全局理解，擅长在多方约束下设计兼顾短期收益与长期健康的方案；持续跟踪学术前沿，乐于推动新技术在业务中产生实际价值。
+
+\end{document}
