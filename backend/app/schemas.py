@@ -118,6 +118,7 @@ class CreateFinishOut(BaseModel):
     polished: bool  # 是否经过 LLM 润色（False = 基线版 / 演示模式）
     pdf_url: str | None = None
     pdf_error: str | None = None
+    highlights: list[str] = Field(default_factory=list)  # 聊天模式：LLM 挖掘的核心亮点
 
 
 # ---------- 优化 ----------

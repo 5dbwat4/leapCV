@@ -245,6 +245,23 @@ export interface CreateFinishResult {
   polished: boolean
   pdf_url: string | null
   pdf_error: string | null
+  highlights?: string[]
+}
+
+// ---------- 创建简历 · 聊天模式 ----------
+export interface CreateModeOut {
+  llm_available: boolean
+}
+
+export interface ChatStartOut {
+  session_id: string
+  reply: string
+}
+
+export interface ChatMessageOut {
+  reply: string
+  done: boolean
+  turns: number
 }
 
 // ---------- 分析剧场 SSE 细粒度事件（按时间顺序单向推送） ----------

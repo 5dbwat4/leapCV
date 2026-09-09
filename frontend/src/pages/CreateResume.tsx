@@ -1,14 +1,19 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import axios from "axios"
 import { Link, useNavigate } from "react-router-dom"
 import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  ClipboardList,
   Download,
   FileText,
   Loader2,
+  MessageCircle,
   Plus,
+  RefreshCw,
+  Send,
   Sparkles,
   Trash2,
 } from "lucide-react"
@@ -16,7 +21,16 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { toast } from "sonner"
 
-import { downloadResumePdf, fetchCreateSteps, fetchResumePdfBlob, finishCreate } from "@/api"
+import {
+  downloadResumePdf,
+  fetchCreateMode,
+  fetchCreateSteps,
+  fetchResumePdfBlob,
+  finishCreate,
+  finishCreateChat,
+  sendCreateChatMessage,
+  startCreateChat,
+} from "@/api"
 import { apiErrorMessage } from "@/api/client"
 import type {
   CreateAnswers,
@@ -225,6 +239,205 @@ function ListFields({
   )
 }
 
+// ---------- 聊天问答视图 ----------
+interface ChatMsg {
+  role: "user" | "assistant"
+  content: string
+}
+
+function ChatView({ onResult }: { onResult: (r: CreateFinishResult) => void }) {
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [input, setInput] = useState("")
+  const [starting, setStarting] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [done, setDone] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages, sending, generating])
+
+  const start = () => {
+    setStarting(true)
+    setError(null)
+    setMessages([])
+    setDone(false)
+    startCreateChat()
+      .then(({ session_id, reply }) => {
+        setSessionId(session_id)
+        setMessages([{ role: "assistant", content: reply }])
+      })
+      .catch((err) => setError(apiErrorMessage(err, "开启聊天失败，请重试")))
+      .finally(() => setStarting(false))
+  }
+
+  useEffect(() => {
+    start()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const send = async () => {
+    const text = input.trim()
+    if (!text || sending || generating || !sessionId) return
+    setInput("")
+    setMessages((m) => [...m, { role: "user", content: text }])
+    setSending(true)
+    setError(null)
+    try {
+      const out = await sendCreateChatMessage(sessionId, text)
+      setMessages((m) => [...m, { role: "assistant", content: out.reply }])
+      setDone(out.done)
+    } catch (err) {
+      const msg = apiErrorMessage(err, "消息发送失败，请重试")
+      if (err && axios.isAxiosError(err) && err.response?.status === 404) {
+        setError("聊天会话已过期")
+      } else {
+        setError(msg)
+      }
+      setMessages((m) => [...m, { role: "assistant", content: msg }])
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const generate = async () => {
+    if (!sessionId || generating) return
+    setGenerating(true)
+    setError(null)
+    try {
+      const result = await finishCreateChat(sessionId)
+      onResult(result)
+    } catch (err) {
+      setError(apiErrorMessage(err, "简历生成失败，请重试"))
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const canGenerate = !!sessionId && !starting && !sending && !generating
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <CardContent className="flex h-[56vh] min-h-80 flex-col gap-3 overflow-y-auto p-4">
+          {starting ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin text-primary" />
+              顾问正在准备…
+            </div>
+          ) : (
+            messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                {m.role === "assistant" && (
+                  <span className="mr-2 flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                    <Sparkles className="size-4 text-primary" />
+                  </span>
+                )}
+                <div
+                  className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                    m.role === "user"
+                      ? "rounded-br-sm bg-primary text-primary-foreground"
+                      : "rounded-tl-sm bg-muted text-foreground"
+                  }`}
+                >
+                  {m.content}
+                </div>
+              </div>
+            ))
+          )}
+          {sending && (
+            <div className="flex items-center gap-2">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Sparkles className="size-4 text-primary" />
+              </span>
+              <div className="flex gap-1 rounded-2xl rounded-tl-sm bg-muted px-4 py-3">
+                <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:0ms]" />
+                <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:150ms]" />
+                <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:300ms]" />
+              </div>
+            </div>
+          )}
+          {error && (
+            <p className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <AlertTriangle className="size-3.5 shrink-0" />
+              {error}
+            </p>
+          )}
+          <div ref={bottomRef} />
+        </CardContent>
+      </Card>
+
+      {done ? (
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <p className="flex items-center gap-2 text-sm">
+              <CheckCircle2 className="size-4 text-primary" />
+              信息收齐了，随时可以生成你的简历
+            </p>
+            <Button onClick={() => void generate()} disabled={generating}>
+              {generating ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Sparkles className="size-4" />
+              )}
+              生成我的简历
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <div className="flex items-end gap-2">
+              <Textarea
+                className="min-h-11 flex-1 resize-none py-2.5 text-sm"
+                rows={1}
+                placeholder={done ? "信息已收齐，可以直接生成简历了" : "输入你的回答，Enter 发送，Shift+Enter 换行"}
+                value={input}
+                disabled={sending || generating || starting}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault()
+                    void send()
+                  }
+                }}
+              />
+              <Button
+                size="icon"
+                className="size-11 shrink-0"
+                onClick={() => void send()}
+                disabled={!input.trim() || sending || generating || starting}
+              >
+                {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              </Button>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void generate()}
+                disabled={!canGenerate}
+              >
+                <Sparkles className="size-4" />
+                信息够了，生成我的简历
+              </Button>
+              {error && (
+                <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={start}>
+                  <RefreshCw className="size-3.5" />
+                  重新开始聊天
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
 // ---------- 结果页 ----------
 function ResultView({
   result,
@@ -319,6 +532,25 @@ function ResultView({
         </CardContent>
       </Card>
 
+      {result.highlights && result.highlights.length > 0 && (
+        <Card>
+          <CardContent className="p-5">
+            <h3 className="mb-3 flex items-center gap-1.5 font-semibold tracking-tight">
+              <Sparkles className="size-4 text-primary" />
+              核心亮点
+            </h3>
+            <ul className="space-y-2">
+              {result.highlights.map((h, i) => (
+                <li key={i} className="flex gap-2 text-sm">
+                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+                  <span>{h}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="rounded-xl border">
         <div className="flex items-center gap-1 border-b px-3 pt-2">
           {(
@@ -388,20 +620,30 @@ export default function CreateResumePage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [genError, setGenError] = useState<string | null>(null)
   const [result, setResult] = useState<CreateFinishResult | null>(null)
+  // 创建方式：chat（LLM 聊天问答）/ form（表单分步）；未配置大模型时仅表单可用
+  const [mode, setMode] = useState<"chat" | "form" | null>(null)
+  const [llmAvailable, setLlmAvailable] = useState(false)
+  // 变化即强制 ChatView 重挂载（"再创建一份"时开启新会话）
+  const [chatKey, setChatKey] = useState(0)
 
   const step = steps[stepIdx]
 
   useEffect(() => {
     let cancelled = false
-    fetchCreateSteps()
-      .then((s) => {
+    Promise.all([
+      fetchCreateSteps(),
+      fetchCreateMode().catch(() => ({ llm_available: false })),
+    ])
+      .then(([s, m]) => {
         if (cancelled) return
         setSteps(s)
+        setLlmAvailable(m.llm_available)
+        setMode(m.llm_available ? "chat" : "form")
         setPhase("wizard")
       })
       .catch((err) => {
         if (!cancelled) {
-          setLoadError(apiErrorMessage(err, "加载问题步骤失败"))
+          setLoadError(apiErrorMessage(err, "加载创建方式失败"))
           setPhase("wizard")
         }
       })
@@ -538,11 +780,17 @@ export default function CreateResumePage() {
     }
   }
 
+  const handleChatResult = (r: CreateFinishResult) => {
+    setResult(r)
+    setPhase("done")
+  }
+
   const restart = () => {
     setAnswers(emptyAnswers())
     setStepIdx(0)
     setResult(null)
     setGenError(null)
+    setChatKey((k) => k + 1)
     setPhase("wizard")
   }
 
@@ -601,8 +849,40 @@ export default function CreateResumePage() {
 
   const last = stepIdx >= steps.length - 1
 
+  const modeTab = (key: "chat" | "form", label: string, icon: React.ReactNode) => (
+    <button
+      className={`flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm transition-colors ${
+        mode === key
+          ? "bg-primary font-medium text-primary-foreground"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      }`}
+      onClick={() => setMode(key)}
+    >
+      {icon}
+      {label}
+    </button>
+  )
+
   return (
     <div className="mx-auto max-w-3xl space-y-4">
+      {/* 创建方式切换：聊天问答（需大模型）/ 表单分步 */}
+      {llmAvailable ? (
+        <div className="flex justify-center">
+          <div className="inline-flex gap-0.5 rounded-lg border bg-background p-0.5">
+            {modeTab("chat", "聊天问答", <MessageCircle className="size-4" />)}
+            {modeTab("form", "表单填写", <ClipboardList className="size-4" />)}
+          </div>
+        </div>
+      ) : (
+        <p className="text-center text-xs text-muted-foreground">
+          提示：配置大模型 API Key（backend/.env）后可启用聊天问答模式
+        </p>
+      )}
+
+      {mode === "chat" ? (
+        <ChatView key={chatKey} onResult={handleChatResult} />
+      ) : (
+        <>
       <div>
         <div className="mb-1.5 flex items-center justify-between text-sm">
           <span className="font-medium tracking-tight">
@@ -684,6 +964,8 @@ export default function CreateResumePage() {
           </Button>
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 }

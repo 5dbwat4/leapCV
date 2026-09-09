@@ -4,8 +4,11 @@ import api, { apiErrorMessage, getToken, setToken } from "./client"
 import { parseContentDisposition } from "./download"
 import type {
   AuthResponse,
+  ChatMessageOut,
+  ChatStartOut,
   CreateAnswers,
   CreateFinishResult,
+  CreateModeOut,
   CreateStepDef,
   HistoryDetail,
   HistoryItem,
@@ -134,6 +137,32 @@ export async function fetchCreateSteps(): Promise<CreateStepDef[]> {
 
 export async function finishCreate(answers: CreateAnswers): Promise<CreateFinishResult> {
   const { data } = await api.post<CreateFinishResult>("/create/finish", answers)
+  return data
+}
+
+// ---------- 创建简历 · 聊天模式 ----------
+export async function fetchCreateMode(): Promise<CreateModeOut> {
+  const { data } = await api.get<CreateModeOut>("/create/mode")
+  return data
+}
+
+export async function startCreateChat(): Promise<ChatStartOut> {
+  const { data } = await api.post<ChatStartOut>("/create/chat/start")
+  return data
+}
+
+export async function sendCreateChatMessage(sessionId: string, message: string): Promise<ChatMessageOut> {
+  const { data } = await api.post<ChatMessageOut>("/create/chat/message", {
+    session_id: sessionId,
+    message,
+  })
+  return data
+}
+
+export async function finishCreateChat(sessionId: string): Promise<CreateFinishResult> {
+  const { data } = await api.post<CreateFinishResult>("/create/chat/finish", {
+    session_id: sessionId,
+  })
   return data
 }
 
