@@ -279,8 +279,14 @@ def run_mock_pipeline(
     jd_text: str,
     target_position: str,
     emit: Callable[[str, dict], None],
+    run_id: str = "",
+    ask_user: Callable[[dict], str | None] | None = None,
 ) -> dict:
-    """按与真实管线完全相同的事件序列推送演示事件，返回内置演示结果（报告部分基于用户真实输入计算）。"""
+    """按与真实管线完全相同的事件序列推送演示事件，返回内置演示结果（报告部分基于用户真实输入计算）。
+
+    ask_user 与真实管线一致：阶段五弹出 Quick check 问题并阻塞等待作答，答案会真实
+    融入改写结果，完整演示「提问 → 点选 → 改写采用」的交互闭环。
+    """
     result = copy.deepcopy(MOCK_RESULT)
     steps = iter(PROGRESS_STEPS)
 
@@ -335,8 +341,30 @@ def run_mock_pipeline(
             time.sleep(ISSUE_INTERVAL)
         emit("issue", issue)
 
-    # ---- 阶段五：内容重构（逐条滑入） ----
+    # ---- 阶段五：内容重构（Quick check 问答 + 逐条滑入） ----
     step()
+    # 演示 Quick check：与真实管线一致地提问并等待作答，答案融入第一条改写
+    if ask_user is not None:
+        question = {
+            "run_id": run_id,
+            "id": "q1",
+            "question": "你主导的订单服务日均处理多少订单？",
+            "options": ["日均 50 万单", "日均 10 万单", "日均 1 万单"],
+            "tip": "点选量级或直接输入真实数据，改写会立即采用；跳过则保留【请补充】占位",
+            "section": "工作经历-杭州云启科技",
+            "before": "负责订单系统的开发和维护",
+        }
+        emit("question", question)
+        answer = ask_user(question)
+        if answer:
+            first_pair = result["rewrite_pairs"][0]
+            first_pair["after"] = first_pair["after"].replace("日均 50 万单", answer.strip())
+            first_pair["answer"] = answer.strip()
+            first_pair["reason"] += "；已采用你通过 Quick check 补充的业务规模"
+            result["optimized_resume_md"] = result["optimized_resume_md"].replace(
+                "支撑日均 50 万单【请补充：真实业务数据】", f"支撑{answer.strip()}"
+            )
+    time.sleep(STRUCT_PAUSE)
     step()
     for idx, pair in enumerate(result["rewrite_pairs"]):
         if idx:

@@ -125,10 +125,19 @@ def run_pipeline(
     jd_text: str,
     target_position: str,
     emit: EmitCallback,
+    *,
+    run_id: str = "",
+    ask_user: Callable[[dict], str | None] | None = None,
 ) -> dict:
-    """执行完整分析管线，边执行边通过 emit 推送细粒度实时事件，返回与前端约定 schema 一致的结果字典。"""
+    """执行完整分析管线，边执行边通过 emit 推送细粒度实时事件，返回与前端约定 schema 一致的结果字典。
+
+    ask_user：Quick check 问答回调（阶段五）。入参为 question 事件 payload（含 run_id/id），
+    返回用户作答文本；None 表示跳过/超时/取消。为 None 时管线不提问，直接改写。
+    """
     if MOCK:
-        return run_mock_pipeline(resume_text, jd_text, target_position, emit)
+        return run_mock_pipeline(
+            resume_text, jd_text, target_position, emit, run_id=run_id, ask_user=ask_user
+        )
 
     stage_events = iter(STAGES)
 
@@ -221,27 +230,133 @@ def run_pipeline(
     step()
     _emit_staggered(emit, "issue", issues, ISSUE_INTERVAL)
 
-    # ---- 阶段五：内容重构 ----
+    # ---- 阶段五：内容重构（多次 LLM 调用：规划 → Quick check 问答 → 逐条改写 → 组装） ----
     step()
-    rewrite_user = (
+    plan_user = (
         _json_text("岗位要求", jd_struct)
         + "\n\n【简历原文】\n"
         + resume_text
         + (f"\n\n【提示】求职者标注的目标岗位为：{target_position}" if target_position else "")
     )
     try:
-        rewrite = chat_json(rewrite_prompt.REWRITE_SYSTEM, rewrite_user)
+        plan = chat_json(rewrite_prompt.REWRITE_PLAN_SYSTEM, plan_user)
     except Exception as e:
-        raise PipelineError(f"内容重构失败：{e}") from e
-    rewrite_pairs = rewrite.get("rewrite_pairs", [])
-    step()
-    _emit_staggered(emit, "rewrite", rewrite_pairs, REWRITE_INTERVAL)
+        raise PipelineError(f"内容重构规划失败：{e}") from e
+    items = [
+        it
+        for it in (plan.get("items") or [])
+        if isinstance(it, dict) and str(it.get("before", "")).strip()
+    ][:8]
+
+    rewrite_pairs: list[dict] = []
+    if not items:
+        # 兜底：规划不可用时退回单次整份改写（旧行为），保证流程不中断
+        try:
+            rewrite = chat_json(rewrite_prompt.REWRITE_SYSTEM, plan_user)
+        except Exception as e:
+            raise PipelineError(f"内容重构失败：{e}") from e
+        rewrite_pairs = [p for p in rewrite.get("rewrite_pairs", []) if isinstance(p, dict)]
+        optimized_md = str(rewrite.get("optimized_resume_md", ""))
+        highlights = rewrite.get("highlights", []) if isinstance(rewrite.get("highlights"), list) else []
+        summary = str(rewrite.get("summary", ""))
+        step()
+        _emit_staggered(emit, "rewrite", rewrite_pairs, REWRITE_INTERVAL)
+    else:
+        # Quick check：对缺数据的关键条目逐个提问，管线暂停等待用户点选/输入
+        answers: dict[int, str | None] = {}
+        qn = 0
+        for idx, item in enumerate(items):
+            q = item.get("question")
+            if ask_user is None or not isinstance(q, dict) or not str(q.get("text", "")).strip():
+                continue
+            qn += 1
+            payload = {
+                "run_id": run_id,
+                "id": f"q{qn}",
+                "question": str(q.get("text", "")).strip(),
+                "options": [str(o).strip() for o in (q.get("options") or []) if str(o).strip()][:4],
+                "tip": str(q.get("tip") or "").strip(),
+                "section": str(item.get("section") or ""),
+                "before": str(item.get("before")),
+            }
+            emit("question", payload)
+            answers[idx] = ask_user(payload)
+
+        # 逐条改写：每条一次小调用，完成即推送（真实耗时天然错开，无需人工 sleep）
+        for idx, item in enumerate(items):
+            answer = answers.get(idx)
+            supplement = (
+                f"求职者刚刚通过快问快答确认：{answer}"
+                if answer
+                else "求职者未补充数据（用「约…/X+」表述框架留白，在 after 中以【请补充：…】标注，并在 reason 提醒其补充真实数据，切勿编造精确数字）"
+            )
+            item_user = (
+                _json_text("岗位要求", jd_struct)
+                + "\n\n"
+                + _json_text(
+                    "改写任务",
+                    {
+                        "section": item.get("section"),
+                        "before": item.get("before"),
+                        "goal": item.get("goal"),
+                    },
+                )
+                + "\n\n【数据补充】\n"
+                + supplement
+            )
+            try:
+                out = chat_json(rewrite_prompt.REWRITE_ITEM_SYSTEM, item_user)
+                after = str(out.get("after") or "").strip() or str(item.get("before"))
+                reason = str(out.get("reason") or "").strip()
+            except Exception:
+                logger.warning("单条改写失败，保留原句继续：section=%s", item.get("section"))
+                after, reason = str(item.get("before")), "本条改写生成失败，已保留原句。"
+            pair: dict = {
+                "section": str(item.get("section") or "简历"),
+                "before": str(item.get("before")),
+                "after": after,
+                "reason": reason,
+            }
+            if answer:
+                pair["answer"] = answer
+            rewrite_pairs.append(pair)
+            emit("rewrite", pair)
+
+        # 组装：完整 Markdown 简历 + 亮点 + 总结（最后一次调用）
+        assembly_user = (
+            _json_text("岗位要求", jd_struct)
+            + "\n\n【简历原文】\n"
+            + resume_text
+            + "\n\n【已确认的改写清单】\n"
+            + json.dumps(
+                [{"before": p["before"], "after": p["after"]} for p in rewrite_pairs],
+                ensure_ascii=False,
+            )
+        )
+        try:
+            final = chat_json(rewrite_prompt.REWRITE_ASSEMBLE_SYSTEM, assembly_user)
+            optimized_md = str(final.get("optimized_resume_md", ""))
+            highlights = (
+                final.get("highlights", [])
+                if isinstance(final.get("highlights"), list)
+                else []
+            )
+            summary = str(final.get("summary", ""))
+        except Exception:
+            logger.warning("简历组装调用失败，降级为原文替换")
+            optimized_md, highlights, summary = "", [], []
+        step()
+        if not optimized_md.strip():
+            optimized_md = resume_text
+            for p in rewrite_pairs:
+                if p["before"] and p["before"] in optimized_md:
+                    optimized_md = optimized_md.replace(p["before"], p["after"], 1)
 
     position_name = target_position or str(jd_struct.get("position_name") or "")
     return {
         "mock": False,
-        "summary": str(rewrite.get("summary", "")),
-        "highlights": rewrite.get("highlights", []),
+        "summary": summary,
+        "highlights": highlights,
         "match": match_result,
         "resume_overview": {
             "name": resume_struct.get("name", ""),
@@ -252,6 +367,6 @@ def run_pipeline(
         },
         "issues": issues,
         "report": report,
-        "optimized_resume_md": str(rewrite.get("optimized_resume_md", "")),
+        "optimized_resume_md": optimized_md,
         "rewrite_pairs": rewrite_pairs,
     }
