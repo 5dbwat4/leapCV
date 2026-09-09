@@ -1,7 +1,9 @@
 import type { SlideDef } from "@/presentation/player/types"
 
 import Agenda, { type DeckSection } from "@/presentation/slides/Agenda"
+import Background from "@/presentation/slides/Background"
 import Cover from "@/presentation/slides/Cover"
+import Objective from "@/presentation/slides/Objective"
 import SectionDivider from "@/presentation/slides/SectionDivider"
 import Thanks from "@/presentation/slides/Thanks"
 
@@ -63,6 +65,8 @@ export function buildDeck(): SlideDef[] {
     { id: "cover", title: "封面", render: () => <Cover /> },
     { id: "agenda", title: "汇报内容", render: () => <Agenda sections={SECTIONS} /> },
     sectionDivider(s1),
+    { id: "background", section: s1.title, title: "课题背景", fragments: 2, render: (step) => <Background step={step} /> },
+    { id: "objective", section: s1.title, title: "课题目标", fragments: 2, render: (step) => <Objective step={step} /> },
     sectionDivider(s2),
     sectionDivider(s3),
     sectionDivider(s4),
