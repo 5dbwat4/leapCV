@@ -96,20 +96,32 @@ export default function AnalysisTheater({
     })
   }, [])
 
-  // Quick check 作答完成：收起卡片并写入动态流
+  // Quick check 作答完成：收起模态、清除行高亮并写入动态流
   const handleQuickCheckDone = useCallback(
     (answer: string | null) => {
       setQuestion((q) => {
         pushFeed({
           kind: "answer",
           title: answer ? `已补充：${answer}` : "已跳过补充",
-          detail: q?.section ? `用于改写：${q.section}` : undefined,
+          detail: q?.section ? `针对：${q.section}` : undefined,
         })
         return null
       })
+      setLines((prev) =>
+        prev ? prev.map((l) => (l.asked ? { ...l, asked: undefined } : l)) : prev,
+      )
     },
     [pushFeed],
   )
+
+  // 出现被提问的行时，把纸张滚动到该行（在遮罩下也可见）
+  useEffect(() => {
+    if (!question) return
+    const t = setTimeout(() => {
+      document.querySelector("[data-asked]")?.scrollIntoView({ block: "center", behavior: "smooth" })
+    }, 150)
+    return () => clearTimeout(t)
+  }, [question?.id])
 
   // 订阅事件总线：把细粒度 SSE 事件归约为剧场各分区状态
   useEffect(() => {
@@ -164,8 +176,10 @@ export default function AnalysisTheater({
           break
         }
         case "question": {
-          // 管线已暂停：弹出 Quick check 卡片等待作答
-          setQuestion((data ?? {}) as QuickCheckEvent)
+          // 管线已暂停：弹出 Quick check 模态，并高亮纸张上被提问的行
+          const q = (data ?? {}) as QuickCheckEvent
+          setQuestion(q)
+          markLine(q.before ?? "", (line) => ({ ...line, asked: true }))
           break
         }
         case "rewrite": {

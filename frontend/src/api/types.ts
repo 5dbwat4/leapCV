@@ -229,6 +229,8 @@ export interface QuickCheckEvent {
   tip?: string
   section?: string
   before?: string
+  /** 等待作答的时限（秒），倒计时归零自动按跳过处理 */
+  expires_in?: number
 }
 
 /** SSE 细粒度事件回调：event 为事件名（如 "score"），data 为已解析的 JSON */

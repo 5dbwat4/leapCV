@@ -13,6 +13,8 @@ export interface DocLine {
   status: DocLineStatus
   /** fixed 态下滑入展示的改写句 */
   after?: string
+  /** Quick check 正在就此行提问（整行高亮，与 status 独立） */
+  asked?: boolean
 }
 
 /** 行匹配归一化：去掉全部空白字符后比较 */
@@ -126,11 +128,18 @@ export default function ResumeDocLive({ lines }: { lines: DocLine[] }) {
   )
 }
 
-/** 单行：文本 + 右侧浮动徽章 + fixed 态改写句滑入 */
+/** 单行：文本 + 右侧浮动徽章 + fixed 态改写句滑入；asked 态整行高亮供 modal 对照 */
 function DocRow({ line }: { line: DocLine }) {
-  const cls = statusTextCls(line.status)
+  const cls = `${statusTextCls(line.status)} ${line.asked ? "font-medium text-indigo-800" : ""}`
+  const hasBadge = line.status !== "normal" || line.asked
   return (
-    <motion.div layout className={`relative py-[3px] ${line.status !== "normal" ? "pr-16" : ""}`}>
+    <motion.div
+      layout
+      data-asked={line.asked || undefined}
+      className={`relative rounded-md py-[3px] ${
+        line.asked ? "-mx-1.5 animate-pulse bg-indigo-50/80 px-1.5 ring-2 ring-indigo-400" : ""
+      } ${hasBadge ? "pr-16" : ""}`}
+    >
       {line.kind === "name" && (
         <p className={`text-center text-[22px] font-bold leading-snug tracking-wide text-slate-900 ${cls}`}>
           {line.text}
@@ -148,7 +157,7 @@ function DocRow({ line }: { line: DocLine }) {
         </p>
       )}
 
-      {/* 右侧浮动状态徽章：待优化（红）/ 已修复 ✓（绿，弹跳） */}
+      {/* 右侧浮动状态徽章：待优化（红）/ 问答中（靛蓝）/ 已修复 ✓（绿，弹跳） */}
       <AnimatePresence>
         {line.status === "flagged" && (
           <motion.span
@@ -160,6 +169,18 @@ function DocRow({ line }: { line: DocLine }) {
             className="absolute right-0 top-0.5 rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600 ring-1 ring-red-200"
           >
             待优化
+          </motion.span>
+        )}
+        {line.asked && (
+          <motion.span
+            key="asked"
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={{ type: "spring", stiffness: 380, damping: 20 }}
+            className="absolute right-0 top-0.5 rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600 ring-1 ring-indigo-300"
+          >
+            问答中
           </motion.span>
         )}
         {line.status === "fixed" && (
