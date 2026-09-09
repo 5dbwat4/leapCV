@@ -64,8 +64,8 @@ def consume() -> None:
         data=json.dumps(
             {
                 "resume_id": resume_id,
+                # 不传 target_position：岗位名应从 JD 全文自动抽取并入库
                 "jd_text": "Python 后端开发工程师，要求熟悉 FastAPI、MySQL、Redis、Docker、Kubernetes，有高并发经验优先。",
-                "target_position": "Python 后端开发工程师",
             }
         ).encode(),
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
@@ -114,6 +114,15 @@ check("流以 result 结束", got_result is not None and stream_error is None, j
 if got_result:
     result = got_result["result"]
     check("结果已落库返回 id", isinstance(got_result.get("id"), int))
+    check("结果含抽取的岗位名", result.get("position_name") == "Python后端开发工程师", str(result.get("position_name")))
+
+    # 历史详情：target_position 未传时应以抽取的岗位名落库
+    record_id = got_result["id"]
+    req = urllib.request.Request(f"{BASE}/history/{record_id}", headers={"Authorization": f"Bearer {token}"})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        detail = json.loads(resp.read())
+    check("历史记录岗位名兜底", detail.get("target_position") == "Python后端开发工程师", str(detail.get("target_position")))
+
     check("改写对采用作答", bool(result["rewrite_pairs"]) and result["rewrite_pairs"][0].get("answer") == "日均 5 万单")
     check("after 文本融入作答", "日均 5 万单" in result["rewrite_pairs"][0]["after"])
     check("优化简历融入作答", "日均 5 万单" in result["optimized_resume_md"])
