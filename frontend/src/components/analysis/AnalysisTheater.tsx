@@ -1,5 +1,5 @@
 // 分析剧场：全屏 AI 分析实时可视化（深紫渐变背景 + 玻璃拟态 + 简历纸张实时标注）
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Check, Loader2, RotateCcw } from "lucide-react"
 
@@ -7,12 +7,14 @@ import { normalizeResumeStruct } from "@/api"
 import type {
   IssueEvent,
   JdStructEvent,
+  QuickCheckEvent,
   RewriteEvent,
   ScoreEvent,
   SkillCheckEvent,
 } from "@/api/types"
 import type { StageStatus } from "@/components/StageProgress"
 import EventFeed, { SkillWall, type FeedItem } from "./EventFeed"
+import { QuickCheckOverlay } from "./QuickCheckCard"
 import ResumeDocLive, { buildDocLines, matchDocLine, type DocLine } from "./ResumeDocLive"
 import ScorePanel from "./ScorePanel"
 import StageTimeline from "./StageTimeline"
@@ -82,16 +84,35 @@ export default function AnalysisTheater({
   const [score, setScore] = useState<ScoreEvent | null>(null)
   const [skills, setSkills] = useState<SkillCheckEvent[]>([])
   const [feed, setFeed] = useState<FeedItem[]>([])
+  // 阶段五 Quick check：question 事件到达时弹出浮层卡片，作答后收起
+  const [question, setQuestion] = useState<QuickCheckEvent | null>(null)
   const feedIdRef = useRef(0)
+
+  // 动态流追加（issue / rewrite / skill / answer 共用），超出上限截断
+  const pushFeed = useCallback((item: Omit<FeedItem, "id">) => {
+    setFeed((prev) => {
+      const next = [...prev, { ...item, id: feedIdRef.current++ }]
+      return next.length > FEED_MAX ? next.slice(next.length - FEED_MAX) : next
+    })
+  }, [])
+
+  // Quick check 作答完成：收起卡片并写入动态流
+  const handleQuickCheckDone = useCallback(
+    (answer: string | null) => {
+      setQuestion((q) => {
+        pushFeed({
+          kind: "answer",
+          title: answer ? `已补充：${answer}` : "已跳过补充",
+          detail: q?.section ? `用于改写：${q.section}` : undefined,
+        })
+        return null
+      })
+    },
+    [pushFeed],
+  )
 
   // 订阅事件总线：把细粒度 SSE 事件归约为剧场各分区状态
   useEffect(() => {
-    const pushFeed = (item: Omit<FeedItem, "id">) => {
-      setFeed((prev) => {
-        const next = [...prev, { ...item, id: feedIdRef.current++ }]
-        return next.length > FEED_MAX ? next.slice(next.length - FEED_MAX) : next
-      })
-    }
     // 行内标注：按归一化文本匹配文档行；匹配不到则只进右栏动态流，文档不标
     const markLine = (target: string, mark: (line: DocLine) => DocLine) => {
       setLines((prev) => {
@@ -142,6 +163,11 @@ export default function AnalysisTheater({
           })
           break
         }
+        case "question": {
+          // 管线已暂停：弹出 Quick check 卡片等待作答
+          setQuestion((data ?? {}) as QuickCheckEvent)
+          break
+        }
         case "rewrite": {
           const rw = (data ?? {}) as RewriteEvent
           // 命中行：→ fixed（原句删除线 + after 滑入）
@@ -158,8 +184,8 @@ export default function AnalysisTheater({
         default:
           break
       }
-    })
-  }, [bus])
+      })
+  }, [bus, pushFeed])
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 text-white">
@@ -261,6 +287,9 @@ export default function AnalysisTheater({
           </div>
         </div>
       </div>
+
+      {/* 阶段五 Quick check：管线暂停等待作答的浮层卡片 */}
+      <QuickCheckOverlay question={question} onDone={handleQuickCheckDone} />
 
       {/* 出错：底部错误条 + 重试 / 返回 */}
       <AnimatePresence>

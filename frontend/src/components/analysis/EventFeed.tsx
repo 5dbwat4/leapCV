@@ -2,14 +2,14 @@
 import { useEffect, useRef } from "react"
 import type { ReactNode } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { AlertTriangle, Check, CheckCircle2, Plus, ShieldAlert, Sparkles, XCircle } from "lucide-react"
+import { AlertTriangle, Check, CheckCircle2, HelpCircle, Plus, ShieldAlert, Sparkles, XCircle } from "lucide-react"
 
 import type { SkillCheckEvent } from "@/api/types"
 
-/** 动态流条目（由 issue / rewrite / skill 事件归一而来） */
+/** 动态流条目（由 issue / rewrite / skill / question 作答归一而来） */
 export interface FeedItem {
   id: number
-  kind: "issue" | "rewrite" | "skill"
+  kind: "issue" | "rewrite" | "skill" | "answer"
   title: string
   detail?: string
   severity?: string
@@ -50,6 +50,9 @@ export function SkillWall({ skills }: { skills: SkillCheckEvent[] }) {
 function feedCardStyle(item: FeedItem): { border: string; iconCls: string; icon: ReactNode } {
   if (item.kind === "rewrite") {
     return { border: "border-l-2 border-l-indigo-400", iconCls: "text-indigo-300", icon: <Sparkles className="size-3.5" /> }
+  }
+  if (item.kind === "answer") {
+    return { border: "border-l-2 border-l-violet-400", iconCls: "text-violet-300", icon: <HelpCircle className="size-3.5" /> }
   }
   if (item.kind === "skill") {
     return item.hit

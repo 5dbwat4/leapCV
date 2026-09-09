@@ -352,6 +352,12 @@ function DiffTab({ result }: { result: AnalysisResult }) {
                 </span>
                 <p className="text-sm leading-relaxed">{pair.after}</p>
               </div>
+              {pair.answer && (
+                <p className="flex items-center gap-1.5 text-xs text-indigo-600">
+                  <span className="rounded bg-indigo-100 px-1.5 py-0.5 font-medium">Quick check</span>
+                  已采用你补充的信息：{pair.answer}
+                </p>
+              )}
               {pair.reason && (
                 <p className="flex gap-1.5 text-xs leading-relaxed text-muted-foreground">
                   <span className="shrink-0 font-medium text-primary">改写理由：</span>
