@@ -178,6 +178,75 @@ export interface OptimizeStreamResult {
   result: AnalysisResult
 }
 
+// ---------- 创建简历（问答式） ----------
+
+export interface CreateFieldDef {
+  name: string
+  label: string
+  type: "input" | "textarea"
+  required: boolean
+  placeholder: string
+}
+
+export interface CreateStepDef {
+  id: string
+  index: number
+  total: number
+  title: string
+  prompt: string
+  tip: string
+  allow_skip: boolean
+  kind: "form" | "list"
+  entry_label: string
+  fields: CreateFieldDef[]
+}
+
+export interface CreateEduItem {
+  school: string
+  major: string
+  degree: string
+  period: string
+  notes: string
+}
+
+export interface CreateWorkItem {
+  company: string
+  position: string
+  period: string
+  highlights: string[]
+}
+
+export interface CreateProjectItem {
+  name: string
+  role: string
+  period: string
+  highlights: string[]
+}
+
+export interface CreateAnswers {
+  name: string
+  phone: string
+  email: string
+  city: string
+  intent: string
+  links: string
+  education: CreateEduItem[]
+  work: CreateWorkItem[]
+  internships: CreateWorkItem[]
+  projects: CreateProjectItem[]
+  skills: string
+  awards: string
+  self_evaluation: string
+}
+
+export interface CreateFinishResult {
+  resume: ResumeOut
+  markdown: string
+  polished: boolean
+  pdf_url: string | null
+  pdf_error: string | null
+}
+
 // ---------- 分析剧场 SSE 细粒度事件（按时间顺序单向推送） ----------
 
 /** SSE `resume_struct` 事件：完整结构化简历 JSON（结构同 ResumeStruct） */

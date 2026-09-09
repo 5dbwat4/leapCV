@@ -34,6 +34,10 @@ _BULLET_PREFIX = re.compile(r"^[-*•]\s+(.*)$")
 _TIME_HINT = re.compile(r"^\d{4}\s*[.\-/]|至今|present", re.IGNORECASE)
 # 联系方式行特征关键词
 _CONTACT_HINT = re.compile(r"求职意向|电话|邮箱|微信|手机|城市")
+# 常见板块标题：纯文本简历的"姓名兜底"不应把这类行误认成姓名
+_HEADING_HINT = re.compile(
+    r"^(教育(经历|背景)|工作(经历|经验)|实习(经历|经验)|项目(经历|经验)|专业(技能|特长)|技能(清单|特长)?|获奖(情况)?|荣誉(奖项)?|自我评价|求职意向|联系方式?|个人信息)$"
+)
 # 疑似"条目型"散段落（如教育经历的学校行）：整行拆成 2~4 段且长度受限才提升为条目
 _ENTRY_LINE_MAX = 80
 _ENTRY_PART_MAX = 30
@@ -174,8 +178,13 @@ def parse_resume_md(md: str) -> ExportDoc:
         # ---- 首个板块之前的散内容：姓名兜底 / 联系方式行 / 前置段落 ----
         if current_section is None:
             if not name_seen:
-                # 容错：md 缺失 "# " 标记时，把首行短文本当姓名
-                if len(plain) <= 20 and not _PIPE_SPLIT.search(plain):
+                # 容错：md 缺失 "# " 标记时，把首行短文本当姓名（排除板块标题 / 含数字的行）
+                if (
+                    len(plain) <= 10
+                    and not _PIPE_SPLIT.search(plain)
+                    and not _HEADING_HINT.match(plain)
+                    and not re.search(r"\d|@|-", plain)
+                ):
                     doc.name = plain
                     name_seen = True
                 else:
@@ -412,7 +421,7 @@ _TEX_PREAMBLE = """% ===========================================================
 % =====================================================================
 \\documentclass[10.5pt]{article}
 \\usepackage[a4paper, top=1.6cm, bottom=1.6cm, left=1.7cm, right=1.7cm]{geometry}
-\\usepackage[UTF8, fontset=windows]{ctex} % Windows 字体集
+\\usepackage[UTF8]{ctex} % 按操作系统自动选择字体集（Windows/Mac/Linux）
 \\usepackage{titlesec}
 \\usepackage{enumitem}
 \\usepackage[hidelinks]{hyperref}
@@ -478,6 +487,9 @@ def _tex_header(doc: ExportDoc) -> list[str]:
         contact_bits.append("{\\color{primary}" + icon + "} " + _tex_escape(part))
     if contact_bits:
         lines.append("  {\\small " + " \\;\\; ".join(contact_bits) + "}")
+    # 前置散落内容（姓名/联系方式之后、首个板块之前的容错行）：居中灰字，与 DOCX 渲染一致
+    for text in doc.preamble:
+        lines.append("  {\\small\\color{graytext} " + _tex_inline(text) + "}")
     lines.append("\\end{center}")
     lines.append("\\vspace{-4pt}")
     return lines

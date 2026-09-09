@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react"
 
 import Navbar from "@/components/Navbar"
 import { useAuth } from "@/auth"
+import CreateResumePage from "@/pages/CreateResume"
 import HistoryPage from "@/pages/History"
 import LoginPage from "@/pages/Login"
 import MatchReportPage from "@/pages/MatchReport"
@@ -71,6 +72,14 @@ export default function App() {
         element={
           <RequireAuth>
             <MyResumesPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/create"
+        element={
+          <RequireAuth>
+            <CreateResumePage />
           </RequireAuth>
         }
       />

@@ -2,11 +2,12 @@
 
 > 让简历，跃然而出 —— 一份好简历，完成一次职业跃迁。
 
-融合大模型文本理解、信息抽取与岗位匹配算法的一站式简历优化 Web 应用：上传简历 + 粘贴目标岗位 JD，AI 自动完成**简历解析 → JD 匹配分析（打分）→ 风险诊断 → 内容重构与亮点挖掘**，输出可直接使用的优化后简历。
+融合大模型文本理解、信息抽取与岗位匹配算法的一站式简历优化 Web 应用：上传简历 + 粘贴目标岗位 JD，AI 自动完成**简历解析 → JD 匹配分析（打分）→ 风险诊断 → 内容重构与亮点挖掘**，输出可直接使用的优化后简历；没有现成简历？回答 6 个问题，一键生成排版精美的简历 PDF。
 
 ## 功能特性
 
-- **多格式简历输入**：PDF / Word（DOCX）/ TXT / MD 上传自动解析，或直接粘贴文本，解析结果可编辑
+- **问答式创建简历**：6 步引导提问（基本信息 / 教育 / 工作 / 实习 / 项目 / 技能），可跳过、可回溯、必填校验；答案先确定性拼装为结构化 Markdown，配置 LLM 后自动润色表述（STAR / 量化 / 动词开头），服务端 XeLaTeX 渲染为一页纸品牌风 PDF（含首页缩略图），保存后即可在「我的简历」中继续编辑与优化
+- **多格式简历输入**：PDF / Word（DOCX）/ TXT / MD 上传自动解析，或直接粘贴文本，解析结果可编辑；任意简历可一键下载 PDF（已生成过直接返回，否则服务端现场排版）
 - **JD 定向匹配**：LLM 抽取岗位硬技能（带权重）/软技能/职责/隐性要求，结合关键词加权覆盖度算法输出 0-100 匹配分与三维度评分（技能/经验/教育）
 - **匹配分析**：已匹配技能（带简历证据）vs 待补强差距（带重要度与补强建议），输出三档投递建议
 - **风险诊断**：错别字/语病/口语化/缺乏量化/描述空泛/真实性风险等 9 类问题，按严重度分级，附原文定位与修改建议；本地规则引擎兜底扫描
@@ -38,8 +39,10 @@ betterjd/
 │   │   ├── models.py            # User / Resume / Optimization
 │   │   ├── schemas.py           # Pydantic 模型
 │   │   ├── auth.py              # 密码哈希 / JWT / 登录态依赖
-│   │   ├── routers/             # auth / resumes / optimize(SSE) / history
+│   │   ├── routers/             # auth / resumes / create / optimize(SSE) / history / export
 │   │   ├── services/
+│   │   │   ├── resume_composer.py  # 创建简历：问答步骤定义 + Markdown 组装 + LLM 润色
+│   │   │   ├── exporter.py      # Markdown → DOCX / LaTeX → PDF（XeLaTeX）
 │   │   │   ├── parser.py        # PDF/DOCX/TXT → 纯文本
 │   │   │   ├── llm.py           # OpenAI 兼容客户端（重试 + JSON 容错）
 │   │   │   ├── matcher.py       # JD 关键词加权覆盖度算法
@@ -107,6 +110,9 @@ cd frontend && pnpm build     # 产出 dist/
 | POST | /resumes/upload | 上传 PDF/DOCX/TXT/MD（≤10MB）并解析 |
 | POST | /resumes/text | 粘贴文本创建简历 |
 | GET | /resumes | 我的简历列表 |
+| GET | /resumes/{id}/pdf | 下载简历 PDF（未生成过则现场排版） |
+| GET | /create/steps | 创建简历问答步骤定义（6 步） |
+| POST | /create/finish | 提交全部作答 → 生成 Markdown + PDF 并落库 |
 | POST | /optimize | 发起分析（SSE 流式进度 + 结果落库） |
 | GET | /history · /history/{id} · DELETE /history/{id} | 历史记录 |
 

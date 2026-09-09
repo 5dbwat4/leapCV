@@ -50,6 +50,76 @@ class ResumeStructuredUpdate(BaseModel):
     structured: dict
 
 
+# ---------- 创建简历（问答式） ----------
+class CreateEduItem(BaseModel):
+    school: str = Field(default="", max_length=100)
+    major: str = Field(default="", max_length=100)
+    degree: str = Field(default="", max_length=50)
+    period: str = Field(default="", max_length=50)
+    notes: str = Field(default="", max_length=1000)
+
+
+class CreateWorkItem(BaseModel):
+    company: str = Field(default="", max_length=100)
+    position: str = Field(default="", max_length=100)
+    period: str = Field(default="", max_length=50)
+    highlights: list[str] = Field(default_factory=list, max_length=20)
+
+
+class CreateProjectItem(BaseModel):
+    name: str = Field(default="", max_length=100)
+    role: str = Field(default="", max_length=150)
+    period: str = Field(default="", max_length=50)
+    highlights: list[str] = Field(default_factory=list, max_length=20)
+
+
+class CreateAnswers(BaseModel):
+    """问答向导全部步骤的作答汇总（finish 时一次性提交）。"""
+
+    name: str = Field(default="", max_length=30)
+    phone: str = Field(default="", max_length=30)
+    email: str = Field(default="", max_length=100)
+    city: str = Field(default="", max_length=30)
+    intent: str = Field(default="", max_length=60)
+    links: str = Field(default="", max_length=200)
+    education: list[CreateEduItem] = Field(default_factory=list, max_length=6)
+    work: list[CreateWorkItem] = Field(default_factory=list, max_length=10)
+    internships: list[CreateWorkItem] = Field(default_factory=list, max_length=10)
+    projects: list[CreateProjectItem] = Field(default_factory=list, max_length=10)
+    skills: str = Field(default="", max_length=2000)
+    awards: str = Field(default="", max_length=1000)
+    self_evaluation: str = Field(default="", max_length=1000)
+
+
+class CreateFieldOut(BaseModel):
+    name: str
+    label: str
+    type: str = "input"
+    required: bool = False
+    placeholder: str = ""
+
+
+class CreateStepOut(BaseModel):
+    id: str
+    index: int
+    total: int
+    title: str
+    prompt: str
+    tip: str = ""
+    allow_skip: bool = False
+    kind: str = "form"  # form | list
+    entry_label: str = ""
+    fields: list[CreateFieldOut]
+
+
+class CreateFinishOut(BaseModel):
+    resume: ResumeOut
+    markdown: str
+    polished: bool  # 是否经过 LLM 润色（False = 基线版 / 演示模式）
+    pdf_url: str | None = None
+    pdf_error: str | None = None
+
+
 # ---------- 优化 ----------
 class OptimizeRequest(BaseModel):
     resume_id: int

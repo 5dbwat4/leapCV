@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import BASE_DIR, CV_DIR, DATA_DIR, THUMB_DIR
 from .database import Base, engine, ensure_schema_upgrades
-from .routers import auth_router, export_router, history_router, optimize_router, resume_router
+from .routers import auth_router, create_router, export_router, history_router, optimize_router, resume_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
@@ -34,6 +34,7 @@ app.add_middleware(
 
 app.include_router(auth_router.router, prefix="/api")
 app.include_router(resume_router.router, prefix="/api")
+app.include_router(create_router.router, prefix="/api")
 app.include_router(optimize_router.router, prefix="/api")
 app.include_router(history_router.router, prefix="/api")
 app.include_router(export_router.router, prefix="/api")

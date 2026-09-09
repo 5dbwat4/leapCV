@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom"
-import { FileText, Files, History, LogOut, Sparkles } from "lucide-react"
+import { FilePlus2, FileText, Files, History, LogOut, Sparkles } from "lucide-react"
 
 import { useAuth } from "@/auth"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -49,6 +49,10 @@ export default function Navbar() {
         <nav className="ml-2 flex items-center gap-1">
           <NavLink to="/" end className={linkClass}>
             工作台
+          </NavLink>
+          <NavLink to="/create" className={linkClass}>
+            <FilePlus2 className="size-4" />
+            创建简历
           </NavLink>
           <NavLink to="/resumes" className={linkClass}>
             <Files className="size-4" />

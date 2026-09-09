@@ -1,6 +1,12 @@
+import axios from "axios"
+
 import api, { apiErrorMessage, getToken, setToken } from "./client"
+import { parseContentDisposition } from "./download"
 import type {
   AuthResponse,
+  CreateAnswers,
+  CreateFinishResult,
+  CreateStepDef,
   HistoryDetail,
   HistoryItem,
   OptimizeStreamResult,
@@ -118,6 +124,63 @@ export async function updateResumeStructured(id: number, structured: ResumeStruc
   const { data } = await api.put<ResumeOut>(`/resumes/${id}/structured`, { structured })
   if (data.structured) data.structured = normalizeResumeStruct(data.structured)
   return data
+}
+
+// ---------- 创建简历（问答式） ----------
+export async function fetchCreateSteps(): Promise<CreateStepDef[]> {
+  const { data } = await api.get<CreateStepDef[]>("/create/steps")
+  return data
+}
+
+export async function finishCreate(answers: CreateAnswers): Promise<CreateFinishResult> {
+  const { data } = await api.post<CreateFinishResult>("/create/finish", answers)
+  return data
+}
+
+/** 获取简历 PDF 的 Blob URL（用于页内预览；调用方负责 URL.revokeObjectURL） */
+export async function fetchResumePdfBlob(id: number): Promise<string> {
+  const { data } = await api.get<Blob>(`/resumes/${id}/pdf`, { responseType: "blob" })
+  return URL.createObjectURL(data)
+}
+
+/** 下载简历 PDF（已生成的直接返回，否则服务端现场渲染） */
+export async function downloadResumePdf(id: number): Promise<void> {
+  let blob: Blob
+  let disposition: string | undefined
+  try {
+    const resp = await api.get<Blob>(`/resumes/${id}/pdf`, { responseType: "blob" })
+    blob = resp.data
+    const header = resp.headers?.["content-disposition"]
+    if (typeof header === "string") disposition = header
+  } catch (err) {
+    throw new Error(await extractBlobErrorDetail(err, "PDF 下载失败，请稍后重试"))
+  }
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = parseContentDisposition(disposition, `简历-${id}.pdf`)
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+/** 从 axios 错误（响应体可能是 JSON Blob）中提取后端 detail 文案 */
+async function extractBlobErrorDetail(err: unknown, fallback: string): Promise<string> {
+  if (axios.isAxiosError(err)) {
+    const data = err.response?.data
+    if (data instanceof Blob) {
+      try {
+        const parsed = JSON.parse(await data.text()) as { detail?: unknown }
+        if (typeof parsed?.detail === "string" && parsed.detail) return parsed.detail
+      } catch {
+        /* 响应体不是 JSON，走兜底 */
+      }
+    } else if (typeof data === "object" && data !== null && typeof (data as { detail?: unknown }).detail === "string") {
+      return (data as { detail: string }).detail
+    }
+  }
+  return apiErrorMessage(err, fallback)
 }
 
 // ---------- 优化（SSE 流式） ----------

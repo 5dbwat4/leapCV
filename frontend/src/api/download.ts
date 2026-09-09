@@ -21,7 +21,7 @@ function triggerBrowserDownload(blob: Blob, filename: string) {
  * 从 Content-Disposition 响应头解析文件名。
  * 兼容 RFC 5987 的 filename*=UTF-8''… 与普通 filename="…"/filename=… 两种形式。
  */
-function parseContentDisposition(header: string | undefined, fallback: string): string {
+export function parseContentDisposition(header: string | undefined, fallback: string): string {
   if (!header) return fallback
 
   // 优先匹配 filename*=UTF-8''xxx（后端对中文文件名会走这种编码形式）

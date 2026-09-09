@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
+  Download,
   FileText,
   FileUp,
   Loader2,
   Pencil,
   Plus,
   RefreshCw,
+  Sparkles,
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { fetchResumeThumb, fetchResumes, parseResume, updateResumeStructured, uploadResume } from "@/api"
+import { downloadResumePdf, fetchResumeThumb, fetchResumes, parseResume, updateResumeStructured, uploadResume } from "@/api"
 import { apiErrorMessage } from "@/api/client"
 import type { ResumeOut, ResumeStruct } from "@/api/types"
 import { Badge } from "@/components/ui/badge"
@@ -573,8 +576,10 @@ function StructEditDialog({
 
 // ---------- 页面 ----------
 export default function MyResumesPage() {
+  const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [resumes, setResumes] = useState<ResumeOut[] | null>(null)
+  const [pdfDownloading, setPdfDownloading] = useState(false)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [struct, setStruct] = useState<ResumeStruct | null>(null)
   const [parsing, setParsing] = useState(false)
@@ -651,6 +656,19 @@ export default function MyResumesPage() {
     }
   }
 
+  const handleDownloadPdf = async () => {
+    if (!selected) return
+    setPdfDownloading(true)
+    try {
+      await downloadResumePdf(selected.id)
+      toast.success("PDF 已开始下载")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "PDF 下载失败，请稍后重试")
+    } finally {
+      setPdfDownloading(false)
+    }
+  }
+
   const handleSaveSection = async (patch: Partial<ResumeStruct>) => {
     if (!selected || !struct) return
     const next = { ...struct, ...patch }
@@ -677,16 +695,32 @@ export default function MyResumesPage() {
           我的简历
         </h1>
         {selected && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="ml-auto gap-1.5 text-muted-foreground"
-            disabled={parsing}
-            onClick={() => void doParse(selected.id, true)}
-          >
-            <RefreshCw className={`size-3.5 ${parsing ? "animate-spin" : ""}`} />
-            重新解析
-          </Button>
+          <div className="ml-auto flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              disabled={pdfDownloading}
+              onClick={() => void handleDownloadPdf()}
+            >
+              {pdfDownloading ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Download className="size-3.5" />
+              )}
+              下载 PDF
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-muted-foreground"
+              disabled={parsing}
+              onClick={() => void doParse(selected.id, true)}
+            >
+              <RefreshCw className={`size-3.5 ${parsing ? "animate-spin" : ""}`} />
+              重新解析
+            </Button>
+          </div>
         )}
       </div>
 
@@ -770,6 +804,22 @@ export default function MyResumesPage() {
           </div>
           <p className="text-xs text-transparent">.</p>
         </label>
+
+        <button
+          className="group w-32 shrink-0 space-y-1.5 text-left sm:w-36"
+          onClick={() => navigate("/create")}
+        >
+          <div className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border text-muted-foreground transition-colors group-hover:border-primary/50 group-hover:bg-primary/5 group-hover:text-primary">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
+              <Sparkles className="size-4.5 text-primary" />
+            </span>
+            <span className="text-xs">问答创建简历</span>
+            <span className="px-4 text-center text-[11px] leading-snug text-muted-foreground/70">
+              回答几个问题，自动生成精美 PDF
+            </span>
+          </div>
+          <p className="truncate text-xs text-muted-foreground">新建一份</p>
+        </button>
       </div>
 
       {/* 详情分区 */}
@@ -782,7 +832,11 @@ export default function MyResumesPage() {
       ) : !selected ? (
         <Card>
           <CardContent className="py-14 text-center text-sm text-muted-foreground">
-            还没有简历，点击上方「上传简历」、将文件拖拽到上方区域，或前往
+            还没有简历：可以上传文件、
+            <button className="mx-1 text-primary hover:underline" onClick={() => navigate("/create")}>
+              问答创建
+            </button>
+            一份新简历，或前往
             <a href="/" className="mx-1 text-primary hover:underline">
               工作台
             </a>

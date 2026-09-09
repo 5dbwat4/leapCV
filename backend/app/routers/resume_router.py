@@ -1,8 +1,10 @@
 import json
+import re
 import uuid
 from pathlib import Path
+from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -12,6 +14,7 @@ from ..database import get_db
 from ..models import Resume, User
 from ..prompts.resume_extract import RESUME_EXTRACT_SYSTEM
 from ..schemas import ResumeOut, ResumeStructuredUpdate, ResumeTextRequest
+from ..services.exporter import ExportError, build_tex, compile_pdf, parse_resume_md
 from ..services.llm import LLMError, chat_json
 from ..services.parser import ALLOWED_SUFFIXES, MAX_FILE_SIZE, ParseError, parse_resume_file
 from ..services.resume_struct import heuristic_resume_struct
@@ -132,6 +135,47 @@ def get_resume_file(
     if not path.exists():
         raise HTTPException(status_code=404, detail="原始文件缺失")
     return FileResponse(path, filename=resume.filename)
+
+
+def _pdf_download_name(resume: Resume) -> str:
+    """中文下载文件名：复用简历文件名（去掉已有扩展名），清理非法字符。"""
+    base = re.sub(r"\.\w+$", "", resume.filename or "").strip()
+    base = re.sub(r'[\\/:*?"<>|\r\n]+', "", base).strip().strip(". ") or "简历"
+    return f"{base}.pdf"
+
+
+@router.get("/{resume_id}/pdf")
+def get_resume_pdf(
+    resume_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """下载简历 PDF：已生成过 PDF 的直接返回，否则用原文现场渲染（XeLaTeX）。"""
+    resume = _get_owned_resume(resume_id, user, db)
+    filename = _pdf_download_name(resume)
+    disposition = (
+        f"attachment; filename=\"resume-{resume.id}.pdf\"; "
+        f"filename*=UTF-8''{quote(filename)}"
+    )
+
+    if resume.file_path and resume.file_path.endswith(".pdf"):
+        path = DATA_DIR / resume.file_path
+        if path.exists():
+            return FileResponse(
+                path,
+                media_type="application/pdf",
+                headers={"Content-Disposition": disposition, "Cache-Control": "no-store"},
+            )
+
+    try:
+        content = compile_pdf(build_tex(parse_resume_md(resume.raw_text)))
+    except ExportError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": disposition, "Cache-Control": "no-store"},
+    )
 
 
 @router.post("/text", response_model=ResumeOut)
