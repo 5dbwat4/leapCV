@@ -252,40 +252,64 @@ export default function AnalysisTheater({
         </div>
 
         {/* 主体两栏：左简历纸张 ~58% / 右数据面板 ~42% */}
-        <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-5 lg:grid-cols-[58fr_42fr] lg:overflow-hidden">
-          {/* 左栏：A4 简历纸张 */}
-          <div className="relative flex min-h-0 flex-col">
-            {lines ? (
+        {!lines ? (
+          // 简历解析中：右栏数据面板尚未产生，先整体留白等待
+          <div className="flex flex-1 items-center justify-center p-5">
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-10 py-12 text-white/50 backdrop-blur-sm">
+              <Loader2 className="size-6 animate-spin text-indigo-300" />
+              <p className="text-sm">正在解析简历结构…</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-5 lg:grid-cols-[58fr_42fr] lg:overflow-hidden">
+            {/* 左栏：A4 简历纸张 */}
+            <div className="relative flex min-h-0 flex-col">
               <ResumeDocLive lines={lines} />
-            ) : (
-              <div className="flex flex-1 items-center justify-center">
-                <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-10 py-12 text-white/50 backdrop-blur-sm">
-                  <Loader2 className="size-6 animate-spin text-indigo-300" />
-                  <p className="text-sm">正在解析简历结构…</p>
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
 
-          {/* 右栏：匹配分 / 技能芯片墙 / 实时动态流 */}
-          <div className="flex min-h-0 flex-col gap-4">
-            <ScorePanel score={score} />
-            {skills.length > 0 && (
-              <div className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl">
-                <div className="mb-2.5 flex items-center gap-2 text-sm font-semibold text-white/90">
-                  技能匹配
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium tabular-nums text-white/60">
-                    命中 {skills.filter((s) => s.hit).length} · 缺失 {skills.filter((s) => !s.hit).length}
-                  </span>
-                </div>
-                <div className="theater-scroll max-h-24 overflow-y-auto">
-                  <SkillWall skills={skills} />
-                </div>
-              </div>
-            )}
-            <EventFeed items={feed} />
+            {/* 右栏：解析完成后从右侧滑入，匹配分 / 技能芯片墙 / 动态流依次浮现 */}
+            <motion.div
+              initial={{ opacity: 0, x: 48 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ type: "spring", stiffness: 110, damping: 20 }}
+              className="flex min-h-0 flex-col gap-4"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.4, ease: "easeOut" }}
+              >
+                <ScorePanel score={score} />
+              </motion.div>
+              {skills.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1, duration: 0.4, ease: "easeOut" }}
+                  className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl"
+                >
+                  <div className="mb-2.5 flex items-center gap-2 text-sm font-semibold text-white/90">
+                    技能匹配
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium tabular-nums text-white/60">
+                      命中 {skills.filter((s) => s.hit).length} · 缺失 {skills.filter((s) => !s.hit).length}
+                    </span>
+                  </div>
+                  <div className="theater-scroll max-h-24 overflow-y-auto">
+                    <SkillWall skills={skills} />
+                  </div>
+                </motion.div>
+              )}
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.28, duration: 0.4, ease: "easeOut" }}
+                className="flex min-h-0 flex-1 flex-col"
+              >
+                <EventFeed items={feed} />
+              </motion.div>
+            </motion.div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 阶段五 Quick check：管线暂停等待作答的浮层卡片 */}
