@@ -7,6 +7,7 @@ import HistoryPage from "@/pages/History"
 import LoginPage from "@/pages/Login"
 import MatchReportPage from "@/pages/MatchReport"
 import MyResumesPage from "@/pages/MyResumes"
+import PresentationPage from "@/presentation/PresentationPage"
 import PrivacyPage from "@/pages/Privacy"
 import RegisterPage from "@/pages/Register"
 import ResultPage from "@/pages/Result"
@@ -55,6 +56,8 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+      {/* 独立汇报路由：无登录态、无站内入口，仅可通过 URL 直接访问 */}
+      <Route path="/presentation" element={<PresentationPage />} />
       <Route
         path="/"
         element={
