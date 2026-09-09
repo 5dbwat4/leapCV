@@ -4,6 +4,8 @@ import Agenda, { type DeckSection } from "@/presentation/slides/Agenda"
 import Architecture from "@/presentation/slides/Architecture"
 import Background from "@/presentation/slides/Background"
 import Cover from "@/presentation/slides/Cover"
+import LlmClient from "@/presentation/slides/LlmClient"
+import MatchAlgorithm from "@/presentation/slides/MatchAlgorithm"
 import Objective from "@/presentation/slides/Objective"
 import Pipeline from "@/presentation/slides/Pipeline"
 import SectionDivider from "@/presentation/slides/SectionDivider"
@@ -75,6 +77,8 @@ export function buildDeck(): SlideDef[] {
     { id: "pipeline", section: s2.title, title: "五阶段分析管线", fragments: 2, render: (step) => <Pipeline step={step} /> },
     { id: "tech-stack", section: s2.title, title: "技术选型", fragments: 3, render: (step) => <TechStack step={step} /> },
     sectionDivider(s3),
+    { id: "llm-client", section: s3.title, title: "LLM 可靠调用", fragments: 2, render: (step) => <LlmClient step={step} /> },
+    { id: "match-algorithm", section: s3.title, title: "JD 匹配打分", fragments: 2, render: (step) => <MatchAlgorithm step={step} /> },
     sectionDivider(s4),
     sectionDivider(s5),
     sectionDivider(s6),
