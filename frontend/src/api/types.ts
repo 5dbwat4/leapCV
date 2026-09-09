@@ -173,3 +173,48 @@ export interface OptimizeStreamResult {
   id: number
   result: AnalysisResult
 }
+
+// ---------- 分析剧场 SSE 细粒度事件（按时间顺序单向推送） ----------
+
+/** SSE `resume_struct` 事件：完整结构化简历 JSON（结构同 ResumeStruct） */
+export type ResumeStructEvent = ResumeStruct
+
+/** JD 硬技能条目（含权重、是否必需与别名） */
+export interface JdHardSkill {
+  name: string
+  weight: number
+  required: boolean
+  aliases?: string[]
+}
+
+/** SSE `jd_struct` 事件：目标岗位 JD 结构化信息 */
+export interface JdStructEvent {
+  position_name: string
+  hard_skills: JdHardSkill[]
+  soft_skills: string[]
+  [key: string]: unknown
+}
+
+/** SSE `score` 事件：匹配度总分、维度分与总体建议 */
+export interface ScoreEvent {
+  total: number
+  dimensions: MatchDimension[]
+  advice?: string
+  advice_reason?: string
+}
+
+/** SSE `skill` 事件：单条技能命中情况（逐条推送，约 6~15 条） */
+export interface SkillCheckEvent {
+  name: string
+  hit: boolean
+  detail?: string
+}
+
+/** SSE `issue` 事件：单条简历问题（逐条推送，≤12 条，结构同 ResumeIssue） */
+export type IssueEvent = ResumeIssue
+
+/** SSE `rewrite` 事件：单条改写对照（逐条推送，≤8 条，结构同 RewritePair） */
+export type RewriteEvent = RewritePair
+
+/** SSE 细粒度事件回调：event 为事件名（如 "score"），data 为已解析的 JSON */
+export type StreamEventHandler = (event: string, data: unknown) => void

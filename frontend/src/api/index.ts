@@ -7,6 +7,7 @@ import type {
   ProgressEvent,
   ResumeOut,
   ResumeStruct,
+  StreamEventHandler,
 } from "./types"
 
 /** 将后端返回的结构化 JSON 规范化为完整形状（容忍 LLM 输出缺字段） */
@@ -124,6 +125,8 @@ export async function streamOptimize(
   payload: { resume_id: number; jd_text: string; target_position: string },
   onProgress: (event: ProgressEvent) => void,
   signal?: AbortSignal,
+  /** 可选第 4 参：每个解析出的 SSE 事件都会回调（含 progress/result/error），供分析剧场等 UI 消费细粒度事件 */
+  onEvent?: StreamEventHandler,
 ): Promise<OptimizeStreamResult> {
   const resp = await fetch("/api/optimize", {
     method: "POST",
@@ -169,6 +172,8 @@ export async function streamOptimize(
     const handleBlock = (block: string) => {
       const parsed = parseBlock(block)
       if (!parsed) return
+      // 所有解析出的事件（含 progress/result/error）统一回调 onEvent；既有 resolve/reject 逻辑不变
+      onEvent?.(parsed.event, parsed.data)
       if (parsed.event === "progress") {
         onProgress(parsed.data as ProgressEvent)
       } else if (parsed.event === "result") {
