@@ -12,15 +12,12 @@ from ..auth import get_current_user
 from ..database import SessionLocal, get_db
 from ..models import Optimization, Resume, User
 from ..schemas import OptimizeAnswerRequest, OptimizeRequest
-from ..services.interactive import get_gate, pop_gate, register_gate
+from ..services.interactive import QUESTION_TIMEOUT, get_gate, pop_gate, register_gate
 from ..services.pipeline import PipelineError, run_pipeline
 
 logger = logging.getLogger("leapcv.optimize")
 
 router = APIRouter(tags=["optimize"])
-
-# 每个 Quick check 问题的等待上限（秒）；超时后管线改用【请补充】占位符继续
-QUESTION_TIMEOUT = 180.0
 
 
 def _sse(event: str, data: dict) -> str:

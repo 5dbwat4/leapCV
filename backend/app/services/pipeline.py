@@ -12,6 +12,7 @@ from ..prompts import jd_extract as jd_extract_prompt
 from ..prompts import match_assess as match_prompt
 from ..prompts import resume_extract as resume_prompt
 from ..prompts import rewrite as rewrite_prompt
+from .interactive import QUESTION_TIMEOUT
 from .llm import chat_json
 from .matcher import compute_skill_match
 from .mock_data import (
@@ -278,6 +279,7 @@ def run_pipeline(
                 "tip": str(q.get("tip") or "").strip(),
                 "section": str(item.get("section") or ""),
                 "before": str(item.get("before")),
+                "expires_in": QUESTION_TIMEOUT,
             }
             emit("question", payload)
             answers[idx] = ask_user(payload)

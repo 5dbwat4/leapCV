@@ -8,6 +8,10 @@
 import threading
 import time
 
+# 每个 Quick check 问题的等待上限（秒）；随 question 事件下发给前端做倒计时，
+# 超时后管线改用【请补充】占位符继续
+QUESTION_TIMEOUT = 180.0
+
 
 class QuestionGate:
     """单次分析运行内的问答同步原语。"""

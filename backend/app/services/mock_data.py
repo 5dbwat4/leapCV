@@ -4,6 +4,7 @@ import copy
 import time
 from typing import Callable
 
+from .interactive import QUESTION_TIMEOUT
 from .report import build_report
 
 # 演示用 JD 结构（与真实 JD 抽取阶段输出同构），用于生成匹配报告
@@ -354,6 +355,7 @@ def run_mock_pipeline(
             "tip": "点选量级或直接输入真实数据，改写会立即采用；跳过则保留【请补充】占位",
             "section": "工作经历-杭州云启科技",
             "before": "负责订单系统的开发和维护",
+            "expires_in": QUESTION_TIMEOUT,
         }
         emit("question", question)
         answer = ask_user(question)
