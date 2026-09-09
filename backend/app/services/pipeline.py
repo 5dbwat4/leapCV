@@ -3,6 +3,7 @@
 import json
 import logging
 import re
+import time
 from typing import Callable
 
 from ..config import MOCK
@@ -13,13 +14,19 @@ from ..prompts import resume_extract as resume_prompt
 from ..prompts import rewrite as rewrite_prompt
 from .llm import chat_json
 from .matcher import compute_skill_match
-from .mock_data import run_mock_pipeline
+from .mock_data import (
+    ISSUE_INTERVAL,
+    REWRITE_INTERVAL,
+    SKILL_INTERVAL,
+    run_mock_pipeline,
+)
 from .report import build_report
 
 logger = logging.getLogger("leapcv.pipeline")
 
-# 进度回调：on_progress(stage, message, progress 0-100)
-ProgressCallback = Callable[[str, str, int], None]
+# 事件回调：emit(事件名, payload dict)。除 progress 外还包括 resume_struct / jd_struct /
+# score / skill / issue / rewrite 等细粒度事件，由 SSE 层原样转发，供前端驱动实时动画。
+EmitCallback = Callable[[str, dict], None]
 
 STAGES = [
     ("parse_resume", "正在解析简历结构…", 8),
@@ -91,21 +98,43 @@ def _json_text(label: str, data: dict) -> str:
     return f"【{label}】\n{json.dumps(data, ensure_ascii=False)}"
 
 
+def _emit_staggered(emit: EmitCallback, event: str, items: list[dict], interval: float) -> None:
+    """逐条推送 item 事件，条目之间插入固定间隔，给前端动画留出渲染时间。"""
+    for idx, item in enumerate(items):
+        if idx:
+            time.sleep(interval)
+        emit(event, item)
+
+
+def _skill_events(match_result: dict) -> list[dict]:
+    """把匹配结果展开为逐条 skill 事件：先已命中（detail=原文证据），后缺失（detail=补强建议）。"""
+    events: list[dict] = []
+    for hit, key, detail_key in ((True, "matched_skills", "evidence"), (False, "missing_skills", "advice")):
+        for s in match_result.get(key, []):
+            if isinstance(s, dict):
+                events.append(
+                    {"name": str(s.get("name", "")), "hit": hit, "detail": str(s.get(detail_key, ""))}
+                )
+            else:
+                events.append({"name": str(s), "hit": hit, "detail": ""})
+    return events
+
+
 def run_pipeline(
     resume_text: str,
     jd_text: str,
     target_position: str,
-    on_progress: ProgressCallback,
+    emit: EmitCallback,
 ) -> dict:
-    """执行完整分析管线，返回与前端约定 schema 一致的结果字典。"""
+    """执行完整分析管线，边执行边通过 emit 推送细粒度实时事件，返回与前端约定 schema 一致的结果字典。"""
     if MOCK:
-        return run_mock_pipeline(resume_text, jd_text, on_progress)
+        return run_mock_pipeline(resume_text, jd_text, target_position, emit)
 
     stage_events = iter(STAGES)
 
     def step() -> None:
         stage, message, progress = next(stage_events)
-        on_progress(stage, message, progress)
+        emit("progress", {"stage": stage, "message": message, "progress": progress})
 
     # ---- 阶段一：简历结构化解析 ----
     step()
@@ -114,6 +143,7 @@ def run_pipeline(
     except Exception as e:
         raise PipelineError(f"简历解析失败：{e}") from e
     step()
+    emit("resume_struct", resume_struct)
 
     # ---- 阶段二：JD 要求抽取 ----
     step()
@@ -123,6 +153,7 @@ def run_pipeline(
     except Exception as e:
         raise PipelineError(f"JD 解析失败：{e}") from e
     step()
+    emit("jd_struct", jd_struct)
 
     # ---- 阶段三：匹配分析（算法打分 + LLM 定性） ----
     step()
@@ -159,6 +190,17 @@ def run_pipeline(
         "advice_reason": assess.get("advice_reason", ""),
     }
     step()
+    # 匹配总分 + 逐条技能命中情况：在进入诊断阶段前推送完毕
+    emit(
+        "score",
+        {
+            "total": match_result["total"],
+            "dimensions": match_result["dimensions"],
+            "advice": match_result["advice"],
+            "advice_reason": match_result["advice_reason"],
+        },
+    )
+    _emit_staggered(emit, "skill", _skill_events(match_result), SKILL_INTERVAL)
 
     # ---- 阶段四：风险诊断（LLM + 本地规则） ----
     step()
@@ -177,6 +219,7 @@ def run_pipeline(
     # ---- 匹配报告（规则检查项，不消耗额外 LLM 调用） ----
     report = build_report(resume_text, jd_struct, issues)
     step()
+    _emit_staggered(emit, "issue", issues, ISSUE_INTERVAL)
 
     # ---- 阶段五：内容重构 ----
     step()
@@ -190,7 +233,9 @@ def run_pipeline(
         rewrite = chat_json(rewrite_prompt.REWRITE_SYSTEM, rewrite_user)
     except Exception as e:
         raise PipelineError(f"内容重构失败：{e}") from e
+    rewrite_pairs = rewrite.get("rewrite_pairs", [])
     step()
+    _emit_staggered(emit, "rewrite", rewrite_pairs, REWRITE_INTERVAL)
 
     position_name = target_position or str(jd_struct.get("position_name") or "")
     return {
@@ -208,5 +253,5 @@ def run_pipeline(
         "issues": issues,
         "report": report,
         "optimized_resume_md": str(rewrite.get("optimized_resume_md", "")),
-        "rewrite_pairs": rewrite.get("rewrite_pairs", []),
+        "rewrite_pairs": rewrite_pairs,
     }

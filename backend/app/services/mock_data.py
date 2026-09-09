@@ -24,6 +24,52 @@ MOCK_JD_STRUCT = {
     "hidden_requirements": [],
 }
 
+# 演示用简历结构（与真实简历解析阶段输出同构，基本信息与 MOCK_RESULT.resume_overview 一致）。
+# work/project 的 highlights、skills、self_evaluation 中逐字保留了 MOCK_RESULT 里
+# issues[].original 与 rewrite_pairs[].before 的原句，供前端把「原文划除 → 改写句滑入」
+# 的动画匹配到简历文档的具体行上。
+MOCK_RESUME_STRUCT: dict = {
+    "name": "张伟",
+    "phone": "138****8888",
+    "email": "zhangwei@example.com",
+    "current_position": "Python 后端开发工程师",
+    "years_of_experience": 3,
+    "education": [
+        {
+            "school": "浙江工业大学",
+            "major": "计算机科学与技术",
+            "degree": "本科",
+            "period": "2019.9-2023.6",
+        }
+    ],
+    "work": [
+        {
+            "company": "杭州云启科技",
+            "position": "Python 后端开发工程师",
+            "period": "2023.07 - 至今",
+            "highlights": [
+                "负责订单系统的开发和维护",
+                "优化了数据库查询，性能有所提升",
+            ],
+        }
+    ],
+    "internships": [],
+    "projects": [
+        {
+            "name": "电商中台项目",
+            "role": "后端开发",
+            "period": "2024.03 - 2024.10",
+            "highlights": ["帮忙做了一些接口的开发工作"],
+        }
+    ],
+    "skills": ["会使用 Python、MySQL、Redis 等技术"],
+    "languages": [],
+    "awards": [],
+    "self_evaluation": "吃苦耐劳，认真负责，有较强的学习能力和团队合作精神",
+    "sections_found": ["基本信息", "教育经历", "工作经历", "项目经历", "专业技能"],
+    "sections_missing": ["自我评价与岗位动机"],
+}
+
 MOCK_RESULT: dict = {
     "mock": True,
     "summary": (
@@ -206,6 +252,14 @@ MOCK_RESULT: dict = {
     ],
 }
 
+# 演示节奏（秒）：progress 步进间隔、结构化/汇总事件后的停顿，以及逐条 item 事件的推送间隔。
+# item 间隔与真实管线共用（pipeline.py 从此处导入），全程总时长控制在 8~12 秒。
+PROGRESS_INTERVAL = 0.3
+STRUCT_PAUSE = 0.5
+SKILL_INTERVAL = 0.18
+ISSUE_INTERVAL = 0.22
+REWRITE_INTERVAL = 0.28
+
 PROGRESS_STEPS = [
     ("parse_resume", "正在解析简历结构…", 10),
     ("parse_resume", "简历解析完成", 25),
@@ -220,11 +274,74 @@ PROGRESS_STEPS = [
 ]
 
 
-def run_mock_pipeline(resume_text: str, jd_text: str, on_progress: Callable[[str, str, int], None]) -> dict:
-    """模拟真实管线的节奏推送进度，返回内置演示结果（报告部分基于用户真实输入计算）。"""
+def run_mock_pipeline(
+    resume_text: str,
+    jd_text: str,
+    target_position: str,
+    emit: Callable[[str, dict], None],
+) -> dict:
+    """按与真实管线完全相同的事件序列推送演示事件，返回内置演示结果（报告部分基于用户真实输入计算）。"""
     result = copy.deepcopy(MOCK_RESULT)
-    for stage, message, progress in PROGRESS_STEPS:
-        on_progress(stage, message, progress)
-        time.sleep(0.35)
+    steps = iter(PROGRESS_STEPS)
+
+    def step() -> None:
+        stage, message, progress = next(steps)
+        emit("progress", {"stage": stage, "message": message, "progress": progress})
+        time.sleep(PROGRESS_INTERVAL)
+
+    # ---- 阶段一：简历结构化解析 ----
+    step()
+    step()
+    emit("resume_struct", copy.deepcopy(MOCK_RESUME_STRUCT))
+    time.sleep(STRUCT_PAUSE)
+
+    # ---- 阶段二：JD 要求抽取 ----
+    step()
+    step()
+    emit("jd_struct", copy.deepcopy(MOCK_JD_STRUCT))
+    time.sleep(STRUCT_PAUSE)
+
+    # ---- 阶段三：匹配分析（先发总分，再逐条推送已命中/缺失技能） ----
+    step()
+    step()
+    match = result["match"]
+    emit(
+        "score",
+        {
+            "total": match["total"],
+            "dimensions": match["dimensions"],
+            "advice": match["advice"],
+            "advice_reason": match["advice_reason"],
+        },
+    )
+    time.sleep(STRUCT_PAUSE)
+    skills = [
+        {"name": s["name"], "hit": True, "detail": s.get("evidence", "")}
+        for s in match["matched_skills"]
+    ] + [
+        {"name": s["name"], "hit": False, "detail": s.get("advice", "")}
+        for s in match["missing_skills"]
+    ]
+    for idx, skill in enumerate(skills):
+        if idx:
+            time.sleep(SKILL_INTERVAL)
+        emit("skill", skill)
+
+    # ---- 阶段四：风险诊断（逐条弹出） ----
+    step()
+    step()
+    for idx, issue in enumerate(result["issues"]):
+        if idx:
+            time.sleep(ISSUE_INTERVAL)
+        emit("issue", issue)
+
+    # ---- 阶段五：内容重构（逐条滑入） ----
+    step()
+    step()
+    for idx, pair in enumerate(result["rewrite_pairs"]):
+        if idx:
+            time.sleep(REWRITE_INTERVAL)
+        emit("rewrite", pair)
+
     result["report"] = build_report(resume_text, MOCK_JD_STRUCT, result["issues"])
     return result

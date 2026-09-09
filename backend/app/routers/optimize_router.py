@@ -42,7 +42,7 @@ def optimize(
                     resume_text,
                     body.jd_text,
                     body.target_position,
-                    on_progress=lambda s, m, p: q.put(("progress", {"stage": s, "message": m, "progress": p})),
+                    lambda kind, payload: q.put((kind, payload)),
                 )
                 q.put(("done", result))
             except PipelineError as e:
@@ -55,9 +55,7 @@ def optimize(
 
         while True:
             kind, payload = q.get()
-            if kind == "progress":
-                yield _sse("progress", payload)
-            elif kind == "done":
+            if kind == "done":
                 # 用独立会话落库（请求级 session 在流式响应期间不可依赖）
                 session = SessionLocal()
                 try:
@@ -78,9 +76,13 @@ def optimize(
                     session.close()
                 yield _sse("result", {"id": record_id, "result": payload})
                 break
-            else:  # error
+            elif kind == "error":
                 yield _sse("error", payload)
                 break
+            else:
+                # progress / resume_struct / jd_struct / score / skill / issue / rewrite
+                # 等中间事件原样转发为同名 SSE 事件
+                yield _sse(kind, payload)
 
     return StreamingResponse(
         event_stream(),
