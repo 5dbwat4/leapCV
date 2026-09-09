@@ -113,6 +113,8 @@ export interface RewritePair {
   before: string
   after: string
   reason: string
+  /** Quick check 中用户确认补充的信息（如「日均 50 万单」），已融入 after */
+  answer?: string
 }
 
 export interface ReportCheck {
@@ -215,6 +217,17 @@ export type IssueEvent = ResumeIssue
 
 /** SSE `rewrite` 事件：单条改写对照（逐条推送，≤8 条，结构同 RewritePair） */
 export type RewriteEvent = RewritePair
+
+/** SSE `question` 事件：阶段五 Quick check 快问快答，管线暂停等待作答 */
+export interface QuickCheckEvent {
+  run_id: string
+  id: string
+  question: string
+  options: string[]
+  tip?: string
+  section?: string
+  before?: string
+}
 
 /** SSE 细粒度事件回调：event 为事件名（如 "score"），data 为已解析的 JSON */
 export type StreamEventHandler = (event: string, data: unknown) => void

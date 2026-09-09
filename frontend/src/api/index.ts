@@ -121,6 +121,15 @@ export async function updateResumeStructured(id: number, structured: ResumeStruc
 }
 
 // ---------- 优化（SSE 流式） ----------
+/** Quick check 作答：answer 为 null 表示跳过（后端改用占位符继续改写） */
+export async function answerQuickCheck(payload: {
+  run_id: string
+  question_id: string
+  answer: string | null
+}): Promise<void> {
+  await api.post("/optimize/answer", payload)
+}
+
 export async function streamOptimize(
   payload: { resume_id: number; jd_text: string; target_position: string },
   onProgress: (event: ProgressEvent) => void,
