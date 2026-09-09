@@ -145,3 +145,19 @@
         break-inside: avoid;
     }
 }
+
+/* 结果页（/result/:id）打印优化：隐藏页签栏，仅以白底黑字输出当前激活页签内容 */
+@media print {
+    [data-slot="tabs-list"] {
+        display: none !important;
+    }
+    body {
+        background: #fff !important;
+    }
+    main * {
+        box-shadow: none !important;
+    }
+    [data-slot="tabs-content"][data-state="active"] * {
+        color: #000 !important;
+    }
+}

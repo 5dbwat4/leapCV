@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { ArrowRight, FileSearch, History, Sparkles, Trash2 } from "lucide-react"
+import { ArrowRight, FileDown, FileSearch, History, Loader2, Sparkles, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { deleteHistory, fetchHistory } from "@/api"
+import { downloadExport } from "@/api/download"
 import type { HistoryItem } from "@/api/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -31,6 +32,8 @@ export default function HistoryPage() {
   const navigate = useNavigate()
   const [items, setItems] = useState<HistoryItem[] | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<HistoryItem | null>(null)
+  // 正在导出 Word 的记录 id（防止重复点击）
+  const [exportingId, setExportingId] = useState<number | null>(null)
 
   useEffect(() => {
     fetchHistory()
@@ -40,6 +43,19 @@ export default function HistoryPage() {
         setItems([])
       })
   }, [])
+
+  const handleExportWord = async (item: HistoryItem) => {
+    if (exportingId != null) return
+    setExportingId(item.id)
+    try {
+      await downloadExport(item.id, "docx")
+      toast.success("Word 文档已开始下载")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "导出失败，请稍后重试")
+    } finally {
+      setExportingId(null)
+    }
+  }
 
   const handleDelete = async () => {
     if (!deleteTarget) return
@@ -129,6 +145,23 @@ export default function HistoryPage() {
                           ? "匹配偏低"
                           : "匹配较差"}
                   </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground hover:text-primary"
+                    title="导出 Word"
+                    disabled={exportingId === item.id}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      void handleExportWord(item)
+                    }}
+                  >
+                    {exportingId === item.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <FileDown className="size-4" />
+                    )}
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"

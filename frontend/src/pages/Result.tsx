@@ -1,29 +1,53 @@
-import { useEffect, useState } from "react"
-import { Link, useParams } from "react-router-dom"
+import { useEffect, useRef, useState } from "react"
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import {
   ArrowDown,
   ArrowLeft,
   BadgeCheck,
+  ChevronDown,
   CircleAlert,
   Copy,
   Download,
+  FileCode,
+  FileDown,
   FileText,
   Flame,
   ListChecks,
+  Loader2,
+  Printer,
+  RefreshCw,
   ScrollText,
   Target,
   TriangleAlert,
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { fetchHistoryDetail } from "@/api"
-import type { AnalysisResult, HistoryDetail, ResumeIssue } from "@/api/types"
+import { createResumeText, fetchHistoryDetail, streamOptimize } from "@/api"
+import { downloadExport, downloadMarkdown, type ExportFormat } from "@/api/download"
+import type { AnalysisResult, HistoryDetail, ProgressEvent, ResumeIssue } from "@/api/types"
 import ScoreRing from "@/components/ScoreRing"
+import StageProgress, { STAGES, type StageStatus } from "@/components/StageProgress"
+import RecheckBanner, { type RecheckState } from "@/components/recheck/RecheckBanner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -269,43 +293,15 @@ function IssuesTab({ result }: { result: AnalysisResult }) {
 }
 
 // ---------- 优化简历 ----------
+// 复制 / 下载入口已统一收进页面顶部的「导出」下拉菜单
 function ResumeTab({ result }: { result: AnalysisResult }) {
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(result.optimized_resume_md)
-      toast.success("已复制到剪贴板")
-    } catch {
-      toast.error("复制失败，请手动选择文本复制")
-    }
-  }
-
-  const download = () => {
-    const blob = new Blob([result.optimized_resume_md], { type: "text/markdown;charset=utf-8" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `优化后简历-${result.resume_overview.name || "未命名"}.md`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between space-y-0">
+      <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <FileText className="size-4 text-primary" />
           优化后简历（Markdown）
         </CardTitle>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={copy}>
-            <Copy className="size-4" />
-            复制全文
-          </Button>
-          <Button variant="outline" size="sm" onClick={download}>
-            <Download className="size-4" />
-            下载 .md
-          </Button>
-        </div>
       </CardHeader>
       <CardContent>
         <div className="prose prose-slate prose-sm max-w-none prose-headings:mt-5 prose-headings:mb-2 prose-h1:text-xl prose-h2:text-lg prose-h2:border-b prose-h2:pb-1.5 prose-h3:text-base prose-li:my-0.5">
@@ -373,8 +369,24 @@ function DiffTab({ result }: { result: AnalysisResult }) {
 // ---------- 页面 ----------
 export default function ResultPage() {
   const { id } = useParams<{ id: string }>()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [detail, setDetail] = useState<HistoryDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // 导出状态：记录当前正在导出的格式（控制按钮与菜单项 loading）
+  const [exporting, setExporting] = useState<ExportFormat | null>(null)
+
+  // 复检流程状态（弹窗 + 阶段进度）
+  const [recheckOpen, setRecheckOpen] = useState(false)
+  const [rechecking, setRechecking] = useState(false)
+  const [statusMap, setStatusMap] = useState<Record<string, StageStatus>>({})
+  const [lastEvent, setLastEvent] = useState<ProgressEvent | null>(null)
+  const [recheckError, setRecheckError] = useState<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
+
+  // 复检完成后跳转到新报告，新页面通过路由 state 拿到旧分做对比
+  const recheckState = (location.state as { recheck?: RecheckState } | null)?.recheck ?? null
 
   useEffect(() => {
     if (!id) return
@@ -382,6 +394,124 @@ export default function ResultPage() {
       .then(setDetail)
       .catch(() => setError("加载分析结果失败，请从历史记录中重新打开"))
   }, [id])
+
+  // 复制优化稿 Markdown（保留原逻辑与 toast）
+  const handleCopy = async () => {
+    if (!detail) return
+    try {
+      await navigator.clipboard.writeText(detail.result.optimized_resume_md)
+      toast.success("已复制到剪贴板")
+    } catch {
+      toast.error("复制失败，请手动选择文本复制")
+    }
+  }
+
+  // 下载优化稿 .md 文件
+  const handleDownloadMd = () => {
+    if (!detail) return
+    downloadMarkdown(
+      detail.result.optimized_resume_md,
+      `优化后简历-${detail.result.resume_overview.name || "未命名"}.md`,
+    )
+  }
+
+  // 导出 Word / LaTeX / PDF（PDF 503 且提示 TeX 缺失时自动回退下载 .tex）
+  const handleExport = async (fmt: ExportFormat) => {
+    if (!detail || exporting) return
+    setExporting(fmt)
+    try {
+      await downloadExport(detail.id, fmt)
+      toast.success(
+        fmt === "docx" ? "Word 文档已开始下载" : fmt === "tex" ? "LaTeX 源文件已开始下载" : "PDF 已开始下载",
+      )
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "导出失败，请稍后重试"
+      if (fmt === "pdf" && msg.includes("TeX")) {
+        // 服务器未安装 TeX：回退下载 LaTeX 源文件
+        try {
+          await downloadExport(detail.id, "tex")
+          toast.info("服务器未安装 TeX，已为你下载 LaTeX 源文件")
+        } catch {
+          toast.error("LaTeX 源文件下载失败，请稍后重试")
+        }
+      } else {
+        toast.error(msg)
+      }
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  // 前端打印 / 另存为 PDF（配合 index.css 的 @media print 规则只输出当前页签内容）
+  const handlePrint = () => window.print()
+
+  // 「用优化稿复检」：把优化稿存为新简历 → 同一 JD 重新流式分析 → 跳转新报告
+  const startRecheck = async () => {
+    if (!detail || rechecking) return
+    const prevResult = detail.result
+
+    setRecheckOpen(true)
+    setRechecking(true)
+    setRecheckError(null)
+    setStatusMap({ [STAGES[0].key]: "running" })
+    setLastEvent(null)
+
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    try {
+      // 1) 优化稿文本保存为一份新简历
+      const resume = await createResumeText(
+        prevResult.optimized_resume_md,
+        `【复检】${detail.target_position || "岗位"}·优化稿`,
+      )
+      // 2) 用同一份 JD 重新流式分析（阶段推进逻辑与工作台一致）
+      const stream = await streamOptimize(
+        {
+          resume_id: resume.id,
+          jd_text: detail.jd_text,
+          target_position: detail.target_position || "",
+        },
+        (event) => {
+          setLastEvent(event)
+          setStatusMap((prev) => {
+            const next = { ...prev }
+            const idx = STAGES.findIndex((s) => s.key === event.stage)
+            if (idx === -1) return prev
+            STAGES.forEach((s, i) => {
+              if (i < idx) next[s.key] = "done"
+            })
+            next[event.stage] = "running"
+            return next
+          })
+        },
+        controller.signal,
+      )
+      // 3) 完成后关闭弹窗并跳转新报告，带上旧分信息用于对比横幅
+      setRecheckOpen(false)
+      navigate(`/result/${stream.id}`, {
+        state: {
+          recheck: {
+            prevTotal: prevResult.match.total,
+            prevDimensions: prevResult.match.dimensions,
+            prevId: detail.id,
+          } satisfies RecheckState,
+        },
+      })
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        toast.info("已取消本次复检")
+        setRecheckOpen(false)
+      } else {
+        const msg = err instanceof Error ? err.message : "复检失败，请稍后重试"
+        setRecheckError(msg)
+        toast.error(msg)
+      }
+    } finally {
+      setRechecking(false)
+      abortRef.current = null
+    }
+  }
 
   if (error) {
     return (
@@ -410,14 +540,23 @@ export default function ResultPage() {
 
   return (
     <div className="space-y-4">
-      {/* 顶部信息条 */}
-      <div className="flex flex-wrap items-center gap-3">
+      {/* 复检完成对比横幅（仅当通过复检跳转携带 state 时显示，刷新后自动消失） */}
+      {recheckState && (
+        <RecheckBanner
+          state={recheckState}
+          newTotal={result.match.total}
+          newDimensions={result.match.dimensions}
+        />
+      )}
+
+      {/* 顶部信息条（不参与打印） */}
+      <div className="no-print flex flex-wrap items-center gap-3">
         <Button asChild variant="ghost" size="icon" className="size-8">
           <Link to="/history">
             <ArrowLeft className="size-4" />
           </Link>
         </Button>
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <h1 className="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight">
             {detail.target_position || "简历分析报告"}
             {result.mock && (
@@ -430,17 +569,109 @@ export default function ResultPage() {
             分析时间：{new Date(detail.created_at).toLocaleString("zh-CN")}
           </p>
         </div>
-        <Button asChild variant="outline" size="sm" className="gap-1.5">
-          <Link to={`/result/${detail.id}/report`}>
-            <ScrollText className="size-4" />
-            匹配报告
-          </Link>
-        </Button>
-        <Badge className={adviceBadgeClass(result.match.advice)}>{result.match.advice}</Badge>
+
+        {/* 操作区 */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline" size="sm" className="gap-1.5">
+            <Link to={`/result/${detail.id}/report`}>
+              <ScrollText className="size-4" />
+              匹配报告
+            </Link>
+          </Button>
+
+          {/* 复检闭环入口 */}
+          <Button size="sm" className="gap-1.5" onClick={() => void startRecheck()} disabled={rechecking}>
+            <RefreshCw className="size-4" />
+            用优化稿复检
+          </Button>
+
+          {/* 导出下拉菜单 */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5" disabled={exporting !== null}>
+                {exporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+                导出
+                <ChevronDown className="size-3.5 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuItem className="gap-2.5 py-1.5" onClick={() => void handleCopy()}>
+                <Copy className="size-4 text-primary" />
+                <span className="flex flex-col gap-0.5">
+                  <span>复制 Markdown</span>
+                  <span className="text-xs font-normal text-muted-foreground">优化稿全文进入剪贴板</span>
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="gap-2.5 py-1.5" onClick={handleDownloadMd}>
+                <FileText className="size-4 text-primary" />
+                <span className="flex flex-col gap-0.5">
+                  <span>下载 .md</span>
+                  <span className="text-xs font-normal text-muted-foreground">Markdown 源文件</span>
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="gap-2.5 py-1.5"
+                disabled={exporting !== null}
+                onClick={() => void handleExport("docx")}
+              >
+                {exporting === "docx" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <FileDown className="size-4 text-primary" />
+                )}
+                <span className="flex flex-col gap-0.5">
+                  <span>导出 Word (.docx)</span>
+                  <span className="text-xs font-normal text-muted-foreground">适合直接投递或上传求职网站</span>
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2.5 py-1.5"
+                disabled={exporting !== null}
+                onClick={() => void handleExport("tex")}
+              >
+                {exporting === "tex" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <FileCode className="size-4 text-primary" />
+                )}
+                <span className="flex flex-col gap-0.5">
+                  <span>导出 LaTeX (.tex)</span>
+                  <span className="text-xs font-normal text-muted-foreground">学术投递常用的排版源码</span>
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2.5 py-1.5"
+                disabled={exporting !== null}
+                onClick={() => void handleExport("pdf")}
+              >
+                {exporting === "pdf" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <FileDown className="size-4 text-primary" />
+                )}
+                <span className="flex flex-col gap-0.5">
+                  <span>导出 PDF</span>
+                  <span className="text-xs font-normal text-muted-foreground">服务器排版，未装 TeX 时自动回退</span>
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="gap-2.5 py-1.5" onClick={handlePrint}>
+                <Printer className="size-4 text-primary" />
+                <span className="flex flex-col gap-0.5">
+                  <span>打印 / 另存为 PDF</span>
+                  <span className="text-xs font-normal text-muted-foreground">用浏览器打印当前页签内容</span>
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Badge className={adviceBadgeClass(result.match.advice)}>{result.match.advice}</Badge>
+        </div>
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
+        <TabsList className="no-print w-full justify-start overflow-x-auto sm:w-auto">
           <TabsTrigger value="overview">总览</TabsTrigger>
           <TabsTrigger value="match">匹配分析</TabsTrigger>
           <TabsTrigger value="issues" className="gap-1">
@@ -471,6 +702,47 @@ export default function ResultPage() {
           <DiffTab result={result} />
         </TabsContent>
       </Tabs>
+
+      {/* 复检进行中弹窗（可取消，出错可重试） */}
+      <Dialog
+        open={recheckOpen}
+        onOpenChange={(open) => {
+          if (!open && rechecking) {
+            // 通过 ESC / 点击遮罩关闭等同于取消
+            abortRef.current?.abort()
+          }
+          setRecheckOpen(open)
+        }}
+      >
+        <DialogContent showCloseButton={false} className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>AI 复检进行中</DialogTitle>
+            <DialogDescription>正在用优化后的简历对同一岗位重新发起分析，完成后将自动跳转到新报告</DialogDescription>
+          </DialogHeader>
+          <StageProgress stages={STAGES} statusMap={statusMap} lastEvent={lastEvent} error={recheckError} />
+          <DialogFooter>
+            {recheckError ? (
+              <>
+                <Button variant="outline" className="flex-1" onClick={() => setRecheckOpen(false)}>
+                  关闭
+                </Button>
+                <Button className="flex-1" onClick={() => void startRecheck()}>
+                  重试
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={!rechecking}
+                onClick={() => abortRef.current?.abort()}
+              >
+                取消复检
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
