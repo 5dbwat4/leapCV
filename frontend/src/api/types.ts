@@ -142,6 +142,8 @@ export interface AnalysisResult {
   mock: boolean
   summary: string
   highlights: string[]
+  /** 目标岗位名：请求未提供时由 JD 抽取所得，用于历史记录与结果页展示 */
+  position_name?: string
   match: MatchResult
   resume_overview: ResumeOverview
   issues: ResumeIssue[]

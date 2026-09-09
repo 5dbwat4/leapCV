@@ -63,9 +63,8 @@ export default function WorkbenchPage() {
     }
   }, [resume])
 
-  // JD 输入
+  // JD 输入：岗位标题包含在全文中，由 JD 抽取阶段自动识别
   const [jdText, setJdText] = useState("")
-  const [targetPosition, setTargetPosition] = useState("")
 
   // 分析进度
   const [analyzing, setAnalyzing] = useState(false)
@@ -166,7 +165,7 @@ export default function WorkbenchPage() {
       const controller = new AbortController()
       abortRef.current = controller
       const stream = await streamOptimize(
-        { resume_id: resumeId, jd_text: jdText.trim(), target_position: targetPosition.trim() },
+        { resume_id: resumeId, jd_text: jdText.trim() },
         (event) => {
           setLastEvent(event)
           setStatusMap((prev) => {
@@ -401,26 +400,15 @@ export default function WorkbenchPage() {
               <CardDescription>粘贴招聘岗位描述，AI 将以此为基准做定向匹配与优化</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col gap-3">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium" htmlFor="target-position">
-                  目标岗位名称（可选）
-                </label>
-                <Input
-                  id="target-position"
-                  value={targetPosition}
-                  onChange={(e) => setTargetPosition(e.target.value)}
-                  placeholder="如：Python 后端开发工程师"
-                />
-              </div>
               <div className="flex flex-1 flex-col gap-1.5">
                 <label className="text-sm font-medium" htmlFor="jd-text">
-                  岗位描述全文
+                  岗位描述全文（含岗位标题）
                 </label>
                 <Textarea
                   id="jd-text"
                   value={jdText}
                   onChange={(e) => setJdText(e.target.value)}
-                  placeholder="粘贴 JD 全文：岗位职责、任职要求、加分项…"
+                  placeholder="粘贴 JD 全文即可，标题会自动识别。如：&#10;Python 后端开发工程师&#10;岗位职责：…&#10;任职要求：…"
                   className="min-h-56 flex-1 resize-y text-sm leading-relaxed"
                 />
                 <span className="text-xs text-muted-foreground">{jdText.length} 字</span>

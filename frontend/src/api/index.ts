@@ -131,7 +131,7 @@ export async function answerQuickCheck(payload: {
 }
 
 export async function streamOptimize(
-  payload: { resume_id: number; jd_text: string; target_position: string },
+  payload: { resume_id: number; jd_text: string; target_position?: string },
   onProgress: (event: ProgressEvent) => void,
   signal?: AbortSignal,
   /** 可选第 4 参：每个解析出的 SSE 事件都会回调（含 progress/result/error），供分析剧场等 UI 消费细粒度事件 */
