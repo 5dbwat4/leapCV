@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import {
   FileText,
+  FileUp,
   Loader2,
   Pencil,
   Plus,
@@ -8,7 +9,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { fetchResumes, parseResume, updateResumeStructured, uploadResume } from "@/api"
+import { fetchResumeThumb, fetchResumes, parseResume, updateResumeStructured, uploadResume } from "@/api"
 import { apiErrorMessage } from "@/api/client"
 import type { ResumeOut, ResumeStruct } from "@/api/types"
 import { Badge } from "@/components/ui/badge"
@@ -76,6 +77,45 @@ const SECTION_EMPTY_HINTS: Record<SectionKey, string> = {
 
 // ---------- 缩略图 ----------
 function ResumeThumb({ resume }: { resume: ResumeOut }) {
+  // 后端为 PDF 上传生成首页缩略图；无缩略图或加载失败时回退为 CSS 卡片
+  const [imgUrl, setImgUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!resume.thumb_path) {
+      setImgUrl(null)
+      return
+    }
+    let cancelled = false
+    let url: string | null = null
+    fetchResumeThumb(resume.id)
+      .then((u) => {
+        if (cancelled) {
+          URL.revokeObjectURL(u)
+          return
+        }
+        url = u
+        setImgUrl(u)
+      })
+      .catch(() => {
+        // 缩略图缺失/加载失败时保持 CSS 卡片回退
+      })
+    return () => {
+      cancelled = true
+      if (url) URL.revokeObjectURL(url)
+    }
+  }, [resume.id, resume.thumb_path])
+
+  if (imgUrl) {
+    return (
+      <img
+        src={imgUrl}
+        alt={`${resume.filename} 首页缩略图`}
+        className="h-full w-full bg-white object-cover object-top"
+        draggable={false}
+      />
+    )
+  }
+
   const name = resume.structured?.name
   return (
     <div className="flex h-full flex-col gap-2 bg-white p-3">
@@ -542,6 +582,7 @@ export default function MyResumesPage() {
   const [editing, setEditing] = useState<SectionKey | null>(null)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
 
   const selected = resumes?.find((r) => r.id === selectedId) ?? null
 
@@ -591,6 +632,10 @@ export default function MyResumesPage() {
     const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase()
     if (!ALLOWED_EXT.includes(ext)) {
       toast.error("仅支持 PDF / DOCX / TXT / MD 格式文件")
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("文件超过 10MB 限制")
       return
     }
     setUploading(true)
@@ -645,8 +690,28 @@ export default function MyResumesPage() {
         )}
       </div>
 
-      {/* 简历卡片流：可左右滚动 */}
-      <div className="flex gap-3 overflow-x-auto pb-2">
+      {/* 简历卡片流：可左右滚动；支持拖拽文件到区域内上传 */}
+      <div
+        className={`flex gap-3 overflow-x-auto rounded-xl pb-2 transition-colors ${
+          dragOver ? "bg-primary/5 ring-1 ring-primary/30" : ""
+        }`}
+        onDragOver={(e) => {
+          e.preventDefault()
+          setDragOver(true)
+        }}
+        onDragLeave={(e) => {
+          // 仅在真正离开容器（而非移入子元素）时清除高亮
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+            setDragOver(false)
+          }
+        }}
+        onDrop={(e) => {
+          e.preventDefault()
+          setDragOver(false)
+          const file = e.dataTransfer.files?.[0]
+          if (file) void handleUpload(file)
+        }}
+      >
         {resumes?.map((r) => {
           const active = r.id === selectedId
           return (
@@ -684,12 +749,24 @@ export default function MyResumesPage() {
             }}
           />
           <div
-            className={`flex aspect-[3/4] w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary ${
-              uploading ? "border-primary/50" : "border-border"
+            className={`flex aspect-[3/4] w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors ${
+              dragOver
+                ? "border-primary bg-primary/10 text-primary"
+                : uploading
+                  ? "border-primary/50 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/50 hover:text-primary"
             }`}
           >
-            {uploading ? <Loader2 className="size-6 animate-spin" /> : <Plus className="size-6" />}
-            <span className="text-xs">{uploading ? "上传中…" : "上传简历"}</span>
+            {uploading ? (
+              <Loader2 className="size-6 animate-spin" />
+            ) : dragOver ? (
+              <FileUp className="size-6" />
+            ) : (
+              <Plus className="size-6" />
+            )}
+            <span className="text-xs">
+              {uploading ? "上传中…" : dragOver ? "松开上传" : "上传简历"}
+            </span>
           </div>
           <p className="text-xs text-transparent">.</p>
         </label>
@@ -705,7 +782,7 @@ export default function MyResumesPage() {
       ) : !selected ? (
         <Card>
           <CardContent className="py-14 text-center text-sm text-muted-foreground">
-            还没有简历，点击上方「上传简历」或前往
+            还没有简历，点击上方「上传简历」、将文件拖拽到上方区域，或前往
             <a href="/" className="mx-1 text-primary hover:underline">
               工作台
             </a>
