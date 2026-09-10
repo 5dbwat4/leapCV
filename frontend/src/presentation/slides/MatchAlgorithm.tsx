@@ -9,13 +9,13 @@ const WEIGHTS = [
   { name: "分布式事务经验", weight: 4, required: "必备", hit: false },
 ]
 
-/** 关键技术 ②：JD 匹配打分 —— 加权关键词覆盖度（算法）+ LLM 定性评估双路证据。 */
+/** 关键技术 ①：JD 匹配打分 —— 加权关键词覆盖度（算法）+ LLM 定性评估双路证据。 */
 export default function MatchAlgorithm({ step }: { step: number }) {
   return (
     <SlideFrame>
       <SlideTitle
-        kicker="03 关键技术实现 ②"
-        title="JD 匹配打分：算法量化 + LLM 定性，双路证据"
+        kicker="03 关键技术实现 ①"
+        title="JD 匹配打分：算法量化 + LLM 定性"
         subtitle="算法给出可复现的量化底线，LLM 在此之上做语义层评估"
       />
 

@@ -76,9 +76,9 @@ export default function Pipeline({ step }: { step: number }) {
               </div>
             </Reveal>
             {i < STAGES.length - 1 && (
-              <div className="flex items-center px-0.5">
+              <Reveal at={0} step={step} className="flex items-center px-0.5">
                 <span className="text-[16px] font-bold text-indigo-300">→</span>
-              </div>
+              </Reveal>
             )}
           </div>
         ))}

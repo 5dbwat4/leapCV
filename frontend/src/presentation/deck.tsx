@@ -6,13 +6,12 @@ import Background from "@/presentation/slides/Background"
 import Cover from "@/presentation/slides/Cover"
 import { LlmCode, MatcherCode, PipelineCode, SseCode } from "@/presentation/slides/CodeShowcase"
 import ExportChain from "@/presentation/slides/ExportChain"
-import LlmClient from "@/presentation/slides/LlmClient"
 import MatchAlgorithm from "@/presentation/slides/MatchAlgorithm"
 import Objective from "@/presentation/slides/Objective"
+import ParserResilient from "@/presentation/slides/ParserResilient"
 import Pipeline from "@/presentation/slides/Pipeline"
 import QuickCheck from "@/presentation/slides/QuickCheck"
 import SectionDivider from "@/presentation/slides/SectionDivider"
-import SseStreaming from "@/presentation/slides/SseStreaming"
 import TechStack from "@/presentation/slides/TechStack"
 import TheaterSlide from "@/presentation/slides/TheaterSlide"
 import Thanks from "@/presentation/slides/Thanks"
@@ -34,8 +33,8 @@ export const SECTIONS: DeckSection[] = [
   {
     no: "03",
     title: "关键技术实现",
-    desc: "六项核心技术：从 LLM 可靠调用到实时可视化与导出。",
-    pages: ["LLM 可靠调用", "JD 匹配算法", "SSE 流式管线", "Quick check 问答门", "实时分析剧场", "导出链路"],
+    desc: "几项核心技术：从 JD 匹配双路证据到实时剧场与容错导出。",
+    pages: ["JD 匹配打分", "Quick check 问答门", "实时分析剧场", "Markdown 容错解析", "导出链路"],
   },
   {
     no: "04",
@@ -82,17 +81,16 @@ export function buildDeck(): SlideDef[] {
     { id: "pipeline", section: s2.title, title: "五阶段分析管线", fragments: 2, render: (step) => <Pipeline step={step} /> },
     { id: "tech-stack", section: s2.title, title: "技术选型", fragments: 3, render: (step) => <TechStack step={step} /> },
     sectionDivider(s3),
-    { id: "llm-client", section: s3.title, title: "LLM 可靠调用", fragments: 2, render: (step) => <LlmClient step={step} /> },
     { id: "match-algorithm", section: s3.title, title: "JD 匹配打分", fragments: 2, render: (step) => <MatchAlgorithm step={step} /> },
-    { id: "sse-streaming", section: s3.title, title: "SSE 流式管线", fragments: 3, render: (step) => <SseStreaming step={step} /> },
-    { id: "quick-check", section: s3.title, title: "Quick check 问答门", fragments: 6, render: (step) => <QuickCheck step={step} /> },
-    { id: "theater", section: s3.title, title: "实时分析剧场", fragments: 4, render: (step) => <TheaterSlide step={step} /> },
+    { id: "quick-check", section: s3.title, title: "Quick check 问答门", fragments: 3, render: (step) => <QuickCheck step={step} /> },
+    { id: "theater", section: s3.title, title: "实时分析剧场", fragments: 3, render: (step) => <TheaterSlide step={step} /> },
+    { id: "parser-resilient", section: s3.title, title: "Markdown 容错解析", fragments: 3, render: (step) => <ParserResilient step={step} /> },
     { id: "export-chain", section: s3.title, title: "导出链路", fragments: 3, render: (step) => <ExportChain step={step} /> },
     sectionDivider(s4),
-    { id: "code-matcher", section: s4.title, title: "代码：匹配算法", fragments: 2, render: () => <MatcherCode /> },
-    { id: "code-pipeline", section: s4.title, title: "代码：管线骨架", fragments: 2, render: () => <PipelineCode /> },
-    { id: "code-llm", section: s4.title, title: "代码：重试梯度", fragments: 2, render: () => <LlmCode /> },
-    { id: "code-sse", section: s4.title, title: "代码：SSE 桥接", fragments: 2, render: () => <SseCode /> },
+    { id: "code-matcher", section: s4.title, title: "代码：匹配算法", fragments: 3, render: (step) => <MatcherCode step={step} /> },
+    { id: "code-pipeline", section: s4.title, title: "代码：管线骨架", fragments: 3, render: (step) => <PipelineCode step={step} /> },
+    { id: "code-llm", section: s4.title, title: "代码：重试梯度", fragments: 3, render: (step) => <LlmCode step={step} /> },
+    { id: "code-sse", section: s4.title, title: "代码：SSE 桥接", fragments: 3, render: (step) => <SseCode step={step} /> },
     sectionDivider(s5),
     sectionDivider(s6),
     { id: "thanks", title: "致谢", render: () => <Thanks /> },

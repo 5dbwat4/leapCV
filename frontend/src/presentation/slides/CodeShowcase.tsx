@@ -14,7 +14,6 @@ def keyword_hit(resume_norm, name, aliases=None):
     return any(_normalize(c) in resume_norm for c in candidates)
 
 def compute_skill_match(keywords, resume_text):
-    """keywords 来自 JD 抽取：{name, weight(1-5), required, aliases?}"""
     resume_norm = _normalize(resume_text)
     total_weight = hit_weight = 0.0
     matched, missing = [], []
@@ -30,8 +29,7 @@ def compute_skill_match(keywords, resume_text):
             matched.append(kw["name"])
         else:
             missing.append(kw["name"])
-    score = round(hit_weight / total_weight * 100)
-    return score, matched, missing
+    return round(hit_weight / total_weight * 100), matched, missing
 `
 
 const PIPELINE_CODE = `
@@ -42,17 +40,15 @@ def run_pipeline(resume_text, jd_text, target_position, emit, *, run_id, ask_use
     jd_struct = chat_json(jd_extract_prompt.JD_EXTRACT_SYSTEM, jd_text)
     emit("jd_struct", jd_struct)
 
-    # 阶段三：算法打分 + LLM 定性 → total = 技能50% + 经验30% + 教育20%
+    # 阶段三：算法打分 + LLM 定性 → 技能50% + 经验30% + 教育20%
     skill_score, matched, missing = compute_skill_match(jd_struct["hard_skills"], resume_text)
     assess = chat_json(match_prompt.MATCH_ASSESS_SYSTEM, match_user)
     total = round(skill_score * 0.5 + assess["experience_score"] * 0.3
                   + assess["education_score"] * 0.2)
     emit("score", {"total": total, "dimensions": dimensions, ...})
-
     # 阶段四：LLM 九类诊断 + 本地弱表述规则兜底，去重合并
     issues = _dedupe_issues(chat_json(diagnose_prompt.DIAGNOSE_SYSTEM, ...),
                             _rule_scan(resume_text))
-
     # 阶段五：规划 → Quick check 问答 → 逐条改写 → 整卷组装
     plan = chat_json(rewrite_prompt.REWRITE_PLAN_SYSTEM, plan_user)
     for item in plan["items"]:
@@ -85,8 +81,7 @@ def chat_json(system, user, temperature=0.3, max_tokens=None):
                 kwargs["extra_body"] = {"chat_template_kwargs":
                                         {"enable_thinking": False}}
             resp = client.chat.completions.create(**kwargs)
-            content = resp.choices[0].message.content or ""
-            return _extract_json(content)     # 四步容错提取
+            return _extract_json(resp.choices[0].message.content or "")  # 四步容错提取
         except Exception as e:
             last_error = e                    # 降级重试
     raise LLMError(f"大模型调用失败…（{last_error}）")
@@ -110,7 +105,6 @@ def optimize(body, user, db):
             except PipelineError as e:
                 q.put(("error", {"message": str(e)}))
         threading.Thread(target=task, daemon=True).start()
-
         while True:
             kind, payload = q.get()           # 队列解耦生产 / 消费
             if kind == "done":
@@ -118,17 +112,16 @@ def optimize(body, user, db):
                 yield _sse("result", {"id": record.id, "result": payload})
                 break
             elif kind == "error":
-                yield _sse("error", payload); break
+                yield _sse("error", payload)
+                break
             yield _sse(kind, payload)         # 中间事件原样转发
-
-    return StreamingResponse(event_stream(),
-                             media_type="text/event-stream")
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 `
 
 const KICKER = "04 代码展示"
 
 /** 代码展示 ①：JD 加权覆盖度匹配算法（backend/app/services/matcher.py）。 */
-export function MatcherCode() {
+export function MatcherCode({ step }: { step: number }) {
   return (
     <CodeSlide
       kicker={KICKER}
@@ -136,7 +129,7 @@ export function MatcherCode() {
       subtitle="matcher.py —— 量化打分的全部逻辑不足 40 行"
       file="backend/app/services/matcher.py"
       code={MATCHER_CODE}
-      step={2}
+      step={step}
       notes={[
         { lead: "权重从哪来", text: "JD 抽取阶段由 LLM 标注 1-5 级权重与必备/加分，算法只负责公平计票" },
         { lead: "别名等价命中", text: "归一化后子串匹配，同义技术名一条候选列表即可等价命中" },
@@ -147,7 +140,7 @@ export function MatcherCode() {
 }
 
 /** 代码展示 ②：五阶段管线骨架（backend/app/services/pipeline.py）。 */
-export function PipelineCode() {
+export function PipelineCode({ step }: { step: number }) {
   return (
     <CodeSlide
       kicker={KICKER}
@@ -155,7 +148,7 @@ export function PipelineCode() {
       subtitle="pipeline.py —— emit 让管线与传输解耦，ask_user 让管线可以停下来提问"
       file="backend/app/services/pipeline.py"
       code={PIPELINE_CODE}
-      step={2}
+      step={step}
       notes={[
         { lead: "事件即契约", text: "resume_struct / jd_struct / score / issue / rewrite 与前端 schema 一一对齐" },
         { lead: "双路证据", text: "阶段三先算覆盖率再交给 LLM 定性，算法结果作为参考注入 Prompt" },
@@ -166,7 +159,7 @@ export function PipelineCode() {
 }
 
 /** 代码展示 ③：LLM 三级重试梯度（backend/app/services/llm.py）。 */
-export function LlmCode() {
+export function LlmCode({ step }: { step: number }) {
   return (
     <CodeSlide
       kicker={KICKER}
@@ -174,7 +167,7 @@ export function LlmCode() {
       subtitle="llm.py —— 上层管线只管调 chat_json，容错细节全部收口在这里"
       file="backend/app/services/llm.py"
       code={LLM_CODE}
-      step={2}
+      step={step}
       notes={[
         { lead: "梯度式降级", text: "每一级只改动一个变量：json 约束 → 输出预算，失败原因互不掩盖" },
         { lead: "思维模型兼容", text: "enable_thinking 参数端点不支持时自动在后续重试中去掉" },
@@ -185,7 +178,7 @@ export function LlmCode() {
 }
 
 /** 代码展示 ④：SSE 桥接（backend/app/routers/optimize_router.py）。 */
-export function SseCode() {
+export function SseCode({ step }: { step: number }) {
   return (
     <CodeSlide
       kicker={KICKER}
@@ -193,7 +186,7 @@ export function SseCode() {
       subtitle="optimize_router.py —— 30 行把同步管线变成可直播、可中断的流"
       file="backend/app/routers/optimize_router.py"
       code={SSE_CODE}
-      step={2}
+      step={step}
       notes={[
         { lead: "队列解耦", text: "管线只往队列丢事件，生成器只管取 —— 两端速率互不阻塞" },
         { lead: "问答穿透", text: "ask_user 指向问答门，HTTP 请求 - 响应之外实现了反向唤醒" },
